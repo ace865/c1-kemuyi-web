@@ -1,0 +1,60 @@
+{
+  "name": "c1-kemuyi-web",
+  "version": "1.0.0",
+  "description": "C1 手动挡科目一离线刷题与模拟考试助手",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "node tests/run-tests.mjs",
+    "icon:build": "node scripts/create-icon.mjs",
+    "offline:prepare": "node scripts/prepare-offline.mjs",
+    "offline:check": "node scripts/check-offline.mjs",
+    "desktop:dev": "npm run icon:build && npm run offline:prepare && electron .",
+    "dist:win": "npm run icon:build && npm run offline:prepare && npm run offline:check && npm test && electron-builder --win nsis --x64 && node scripts/write-release-info.mjs"
+  },
+  "devDependencies": {
+    "electron": "43.0.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.local.c1kemuyi.assistant",
+    "productName": "C1 手动挡科目一通关助手",
+    "asar": true,
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "index.html",
+      "package.json",
+      "desktop/**/*",
+      "build/icon.ico",
+      "src/css/**/*",
+      "src/js/**/*",
+      "src/data/questions.offline.json",
+      "src/assets/question-images/**/*"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "C1-Kemuyi-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "C1 科目一通关助手",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    }
+  }
+}
