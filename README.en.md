@@ -36,6 +36,8 @@ The interface is built with HTML, CSS, and JavaScript, with Electron providing t
 
 Sequential, random, wrong-answer, and focused practice cover single-choice, true/false, and multiple-choice questions. Subject 1 mock exams use 100 questions in 45 minutes; Subject 4 uses 50 in 30 minutes. Both require 90 points and retain the latest 20 results for review.
 
+The app follows the Windows reduced-motion preference and also provides an override under My. When enabled, page, card, counter, toast, particle, and confetti movement stops while answer colors, borders, icons, text, and urgent timer status remain available.
+
 <p align="center">
   <img src="docs/assets/app-preview.png" alt="C1 Theory Test Assistant interface" width="960">
 </p>
