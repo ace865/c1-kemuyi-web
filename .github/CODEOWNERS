@@ -1,0 +1,12 @@
+# Default reviewers
+* @ace865 @songyu00yo
+
+# High-risk areas
+/src/js/motion.js @ace865 @songyu00yo
+/src/data/ @ace865 @songyu00yo
+/src/assets/question-images/ @ace865 @songyu00yo
+/desktop/ @ace865 @songyu00yo
+/package.json @ace865 @songyu00yo
+/AGENTS.md @ace865 @songyu00yo
+/CLAUDE.md @ace865 @songyu00yo
+/.github/workflows/ @ace865 @songyu00yo

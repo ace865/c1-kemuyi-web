@@ -64,6 +64,8 @@ node scripts/serve-local.mjs
 npm run check
 ```
 
+開発手順は [CONTRIBUTING.md](CONTRIBUTING.md)、問題データ・依存関係・リリースの保守は [MAINTENANCE.md](MAINTENANCE.md)、脆弱性の非公開報告は [SECURITY.md](SECURITY.md) を参照してください。
+
 コードを書かない場合も、再現手順、OS バージョン、画像を添えて **[Issue を作成](https://github.com/ace865/c1-kemuyi-web/issues/new)** できます。
 
 ## ビルド

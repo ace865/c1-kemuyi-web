@@ -18,6 +18,11 @@
 
 <!-- List every deleted or renamed file and the reason. Write “None” when there are no deletions. -->
 
+## High-impact changes
+
+- [ ] No core UI file has a large rewrite, or the PR has `approved-large-rewrite`.
+- [ ] No question-bank/image file changes, or the PR has `approved-question-bank-update` and documents source and counts.
+
 ## Verification
 
 - [ ] `npm run check`

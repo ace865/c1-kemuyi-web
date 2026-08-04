@@ -21,11 +21,26 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           DELETION_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'approved-file-deletion') }}
+          LARGE_REWRITE_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'approved-large-rewrite') }}
+          QUESTION_BANK_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'approved-question-bank-update') }}
         run: |
           deleted_files="$(git diff --name-only --diff-filter=D "$BASE_SHA...$HEAD_SHA")"
           if [ -n "$deleted_files" ] && [ "$DELETION_APPROVED" != "true" ]; then
             echo "File deletion requires maintainer approval and the approved-file-deletion label:"
             echo "$deleted_files"
+            exit 1
+          fi
+
+          core_churn="$(git diff --numstat "$BASE_SHA...$HEAD_SHA" -- index.html src/css/styles.css src/js/app.js src/js/motion.js | awk '{ total += $1 + $2 } END { print total + 0 }')"
+          if [ "$core_churn" -gt 500 ] && [ "$LARGE_REWRITE_APPROVED" != "true" ]; then
+            echo "Core UI churn is $core_churn lines. Add approved-large-rewrite after maintainer review."
+            exit 1
+          fi
+
+          question_changes="$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- src/data src/assets/question-images)"
+          if [ -n "$question_changes" ] && [ "$QUESTION_BANK_APPROVED" != "true" ]; then
+            echo "Question-bank changes require source/count review and approved-question-bank-update:"
+            echo "$question_changes"
             exit 1
           fi
 
