@@ -64,6 +64,8 @@ node scripts/serve-local.mjs
 npm run check
 ```
 
+完整开发流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，题库、依赖与发布维护见 [MAINTENANCE.md](MAINTENANCE.md)，安全问题请按 [SECURITY.md](SECURITY.md) 私密报告。
+
 发现问题但暂时不方便写代码，也可以直接 **[创建 Issue](https://github.com/ace865/c1-kemuyi-web/issues/new)**，附上复现步骤、系统版本和截图。
 
 ## 构建

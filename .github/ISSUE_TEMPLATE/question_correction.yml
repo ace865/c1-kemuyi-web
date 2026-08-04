@@ -1,0 +1,53 @@
+name: 题库勘误
+description: 报告题干、选项、答案、解析或图片问题
+title: "[Question] "
+labels: [question-bank]
+body:
+  - type: dropdown
+    id: subject
+    attributes:
+      label: 科目
+      options:
+        - 科目一
+        - 科目四
+    validations:
+      required: true
+  - type: input
+    id: question_id
+    attributes:
+      label: 题目 ID
+      description: 可在题库文件或调试信息中查找。
+    validations:
+      required: true
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: 问题类型
+      options:
+        - 题干
+        - 选项
+        - 正确答案
+        - 解析
+        - 图片
+        - 法规已更新
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: 当前内容
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: 建议修正
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: 依据来源
+      description: 请提供法规、官方页面或可核查来源。
+    validations:
+      required: true

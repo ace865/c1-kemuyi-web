@@ -64,6 +64,8 @@ Question corrections, bug fixes, interface improvements, translations, and docum
 npm run check
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete development workflow, [MAINTENANCE.md](MAINTENANCE.md) for question-bank, dependency, and release operations, and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+
 If you are not writing code, **[open an Issue](https://github.com/ace865/c1-kemuyi-web/issues/new)** with reproduction steps, your Windows version, and screenshots.
 
 ## Building

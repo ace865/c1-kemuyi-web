@@ -12,6 +12,7 @@ This repository is the source of truth. Changes from another repository, archive
 - Never bulk-delete, bulk-replace, or rename existing files merely because another implementation looks newer.
 - A request containing “覆盖”, “重写”, or “replace” must be treated as a request to integrate unless the maintainer explicitly confirms the exact files that may be destroyed.
 - File deletion requires explicit maintainer approval in the current task. List every deletion in the Pull Request and apply the `approved-file-deletion` label.
+- Large rewrites of core UI files require `approved-large-rewrite`; question-bank or question-image changes require `approved-question-bank-update`.
 - Preserve unrelated user changes and existing working features.
 - Do not remove tests, documentation, licensing, security restrictions, or build configuration to make a change easier.
 
@@ -29,7 +30,7 @@ Changes to these areas require an explicit impact review:
 
 ## Required workflow
 
-1. Read `AGENTS.md`, `CLAUDE.md`, `package.json`, and the files related to the task.
+1. Read `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `MAINTENANCE.md`, `package.json`, and the files related to the task.
 2. Inspect `git status` and start from the latest `main` on a dedicated feature branch.
 3. Run `npm run check` before large changes to establish a baseline.
 4. For migrations, inventory both versions first: added, modified, missing, and deleted files; data counts; asset counts; runtime and build differences.
