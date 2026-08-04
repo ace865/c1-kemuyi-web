@@ -22,6 +22,7 @@
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square&logo=windows11&logoColor=white">
   <img alt="Electron 43" src="https://img.shields.io/badge/Electron-43-47848F?style=flat-square&logo=electron&logoColor=white">
   <img alt="Offline" src="https://img.shields.io/badge/runtime-offline-17232D?style=flat-square">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2D56B?style=flat-square"></a>
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
@@ -88,3 +89,7 @@ index.html
 ## Notice
 
 This is unofficial study software. Regulations, questions, and exam rules may change; refer to the latest information published by local authorities.
+
+## License
+
+Original program code and documentation are available under the [MIT License](LICENSE). Question-bank data and question images are not automatically covered by the MIT License; see [NOTICE.md](NOTICE.md).

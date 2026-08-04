@@ -22,6 +22,7 @@
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square&logo=windows11&logoColor=white">
   <img alt="Electron 43" src="https://img.shields.io/badge/Electron-43-47848F?style=flat-square&logo=electron&logoColor=white">
   <img alt="Offline" src="https://img.shields.io/badge/runtime-offline-17232D?style=flat-square">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2D56B?style=flat-square"></a>
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
@@ -88,3 +89,7 @@ index.html
 ## 注意
 
 本プロジェクトは非公式の学習ソフトウェアです。法令、問題、試験規則は変更される場合があります。現地当局の最新情報を確認してください。
+
+## ライセンス
+
+独自のプログラムコードと文書は [MIT License](LICENSE) で提供されます。問題データと画像は自動的に MIT License の対象にはなりません。詳細は [NOTICE.md](NOTICE.md) を参照してください。

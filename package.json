@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "C1 手动挡科目一离线刷题与模拟考试 Windows 应用",
   "author": "C1 Kemuyi Assistant",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",

@@ -22,6 +22,7 @@
   <img alt="Windows x64" src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square&logo=windows11&logoColor=white">
   <img alt="Electron 43" src="https://img.shields.io/badge/Electron-43-47848F?style=flat-square&logo=electron&logoColor=white">
   <img alt="Offline" src="https://img.shields.io/badge/runtime-offline-17232D?style=flat-square">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2D56B?style=flat-square"></a>
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
@@ -88,3 +89,7 @@ index.html
 ## 说明
 
 本项目是非官方学习工具。法规、题目和考试规则可能调整，请以当地主管部门发布的最新信息为准。
+
+## 开源协议
+
+原创程序代码与原创文档采用 [MIT License](LICENSE)。题库数据和题目图片不自动包含在 MIT 授权范围内，详情见 [NOTICE.md](NOTICE.md)。
