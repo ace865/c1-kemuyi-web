@@ -2,139 +2,94 @@
 
 # C1 科目一通关助手
 
-**把刷题、模考和错题复盘，装进一个真正离线的 Windows 应用。**
+**C1 Theory Test · Offline Practice System**  
+**C1 学科試験 · オフライン学習システム**
 
-无需登录 · 不上传学习记录 · 断网也能完整使用
-
-[开始使用](#开始使用) · [功能设计](#功能设计) · [参与开发](#参与开发)
+`HTML` · `CSS` · `JavaScript` · `Electron` · `Windows x64`
 
 </div>
 
 ---
 
-科目一不难，难的是知道自己究竟准备好了没有。
+| 中文 | English | 日本語 |
+|---|---|---|
+| C1 科目一离线刷题与模拟考试工具。 | Offline C1 theory practice and mock-exam tool. | C1 学科試験向けのオフライン学習・模擬試験ツール。 |
+| 无需账号；题库、图片和学习数据均保存在本机。 | No account required. Questions, images, and progress stay on-device. | アカウント不要。問題・画像・学習記録は端末内に保存されます。 |
 
-这个项目没有课程、广告和账号体系，只专注三件事：完整刷完题库，按正式节奏模拟考试，把做错的题重新练会。题目、配图、进度和成绩全部保存在本机，打开就能学，断网也不受影响。
+## Specification · 规格 · 仕様
 
-| 题库 | 配图 | 模拟考试 | 数据去向 |
-| :---: | :---: | :---: | :---: |
-| 2,194 道 | 787 张 | 100 题 / 45 分钟 | 仅保存在本机 |
+| Item | Value |
+|---|---:|
+| Question bank / 题库 / 問題数 | 2,194 |
+| Local images / 离线图片 / ローカル画像 | 787 |
+| Mock exam / 模拟考试 / 模擬試験 | 100 questions |
+| Time limit / 限时 / 制限時間 | 45 min |
+| Pass score / 合格线 / 合格点 | 90 / 100 |
+| Storage / 数据存储 / データ保存 | Local only |
 
-## 功能设计
+## Modules · 模块 · モジュール
 
-### 练习不是简单地“下一题”
+| Module | 中文 | English | 日本語 |
+|---|---|---|---|
+| Practice | 顺序、随机、错题练习 | Sequential, random, wrong-answer practice | 順番・ランダム・誤答復習 |
+| Exam | 计时、答题卡、自动交卷 | Timer, navigator, automatic submission | タイマー・問題一覧・自動提出 |
+| Review | 成绩、逐题解析、考试历史 | Score, per-question review, exam history | 採点・問題別復習・試験履歴 |
+| Profiles | 多档案、本地隔离 | Multiple isolated local profiles | 複数ローカルプロファイル |
+| Offline | 本地题库与图片，无远程依赖 | Local dataset and images; no remote runtime dependency | 問題・画像を内蔵、外部通信に依存しない |
 
-- **顺序练习**：记住上次位置，下次从断点继续。
-- **随机练习**：单轮题目不重复，选项顺序也会打乱。
-- **错题练习**：刷题与模考错题统一收录，并保留来源。
-- **即时解析**：练习时选完即判，答案、解析和提示出现在同一屏。
-- **键盘操作**：数字键选择答案，空格或回车前进，退格返回上一题。
+## Run · 运行 · 実行
 
-### 模考尽量接近真实节奏
-
-每场考试随机抽取 100 道不重复题目，限时 45 分钟，90 分及格。中途离开不会丢失进度；到时自动交卷，完成后可以按答题卡逐题复盘。最近 20 场成绩保留在当前档案中。
-
-### 一台电脑，也可以各学各的
-
-应用支持多个本地档案。每个档案拥有独立的刷题进度、正确率、错题本和考试历史，不需要注册账号，也不会把数据发送到服务器。
-
-### 从一开始就按离线应用设计
-
-题库 JSON、题目图片、字体和运行代码都随应用提供，不依赖 CDN、在线接口或远程图片。仓库内置离线完整性检查，构建前会验证：
-
-- 全国通用题库是否保持 2,194 道；
-- 787 张题目配图是否存在且路径有效；
-- 题库中是否意外混入远程地址；
-- 桌面窗口是否遵循必要的安全约束。
-
-## 开始使用
-
-### Windows 桌面版
-
-安装 [Node.js 22 或更高版本](https://nodejs.org/) 后，在项目目录运行：
+Requirements / 环境要求 / 必要環境: **Node.js 22+**
 
 ```powershell
 npm install
 npm start
 ```
 
-`npm start` 会先生成应用图标，再启动 Electron 桌面窗口。
-
-### 浏览器中预览
-
-不启动 Electron，也可以使用仓库自带的本地静态服务器：
+Browser preview / 浏览器预览 / ブラウザ確認:
 
 ```powershell
 node scripts/serve-local.mjs
+# http://127.0.0.1:8080
 ```
 
-然后访问 <http://127.0.0.1:8080>。
+## Verify · 验证 · 検証
 
-> 不建议直接双击 `index.html`。浏览器对本地文件的安全限制可能阻止题库加载，请通过上面的本地地址访问。
+```powershell
+npm run check
+```
 
-## 构建 Windows 安装包
+```text
+offline:check  dataset count · image mapping · remote URL detection
+tests          storage · exam · lifecycle · DOM contract · desktop security
+```
+
+## Build · 构建 · ビルド
 
 ```powershell
 npm run dist:win
 ```
 
-构建流程会依次生成图标、检查离线资源、运行测试并打包 NSIS 安装程序。产物输出到 `release/` 目录。
+Output / 输出 / 出力: `release/C1-Kemuyi-Setup-*.exe`
 
-## 质量检查
-
-```powershell
-# 离线资源检查 + 全部自动化测试
-npm run check
-
-# 仅运行测试
-npm test
-
-# 仅验证离线题库和图片
-npm run offline:check
-```
-
-测试覆盖题库结构、档案迁移、错题来源、随机抽题、考试计时与判分、考试记录上限、定时任务清理、键盘快捷键以及桌面端安全配置。
-
-## 项目结构
+## Layout · 结构 · 構成
 
 ```text
-.
-├── index.html                  应用页面与视图结构
-├── desktop/
-│   └── main.cjs                Electron 主进程
-├── src/
-│   ├── assets/question-images/ 离线题目配图
-│   ├── css/styles.css          响应式界面样式
-│   ├── data/                   离线题库
-│   └── js/                     练习、模考、档案与动效逻辑
-├── scripts/                    离线检查、图标和打包辅助脚本
-└── tests/                      无需测试框架的自动化检查
+index.html
+├─ src/
+│  ├─ data/                    offline question bank
+│  ├─ assets/question-images/  local image set
+│  ├─ js/                      practice, exam, storage, motion
+│  └─ css/                     responsive UI
+├─ desktop/                    Electron main process
+├─ scripts/                    build and integrity checks
+└─ tests/                      Node.js test suite
 ```
-
-## 技术取舍
-
-项目使用原生 HTML、CSS 和 JavaScript 构建界面，以 Electron 提供 Windows 桌面运行环境。没有前端框架、远程服务和运行时第三方接口，核心学习功能在离线状态下仍然完整。
-
-这种选择不追求技术栈的复杂度，而是让题库工具更容易启动、更容易检查，也更不容易因为某个在线服务停止而失效。
-
-## 参与开发
-
-提交改动前，请至少运行一次：
-
-```powershell
-npm run check
-```
-
-如果修改了考试逻辑，请同时确认开始、暂离、恢复、到时交卷和交卷复盘五条路径；如果调整题库或图片，请确保 `offline:check` 仍然通过。
-
-## 使用说明
-
-本项目用于驾驶理论学习与自测，不代表考试主管部门的官方题库或官方应用。法规、题目和考试规则可能调整，请以当地最新规定为准。
 
 ---
 
-<div align="center">
-
-**少一点临考焦虑，多一次认真复盘。**
-
-</div>
+<sub>
+中文：非官方学习工具，请以当地最新考试规定为准。<br>
+English: Unofficial study software. Refer to current local exam regulations.<br>
+日本語：非公式の学習ソフトウェアです。最新の試験規定を確認してください。
+</sub>
