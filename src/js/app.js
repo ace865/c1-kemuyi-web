@@ -1035,8 +1035,75 @@ function renderHelpContent() {
     const list = createElement("ul");
     items.forEach((item) => list.append(createElement("li", "", item)));
     details.append(summary, list);
+    bindHelpSectionMotion(details, summary, list);
     elements.helpContent.append(details);
   });
+}
+
+function bindHelpSectionMotion(details, summary, content) {
+  summary.addEventListener("click", (event) => {
+    if (!shouldAnimate() || details.dataset.animating === "true") return;
+    event.preventDefault();
+    animateHelpSection(details, content, !details.open);
+  });
+}
+
+function animateHelpSection(details, content, opening) {
+  const startHeight = details.getBoundingClientRect().height;
+  details.dataset.animating = "true";
+
+  if (opening) details.open = true;
+  const summaryHeight = details.querySelector("summary").getBoundingClientRect().height;
+  const endHeight = opening ? details.scrollHeight : summaryHeight;
+  const overshootHeight = endHeight + Math.min(10, Math.max(4, (endHeight - startHeight) * 0.04));
+
+  details.classList.toggle("is-opening", opening);
+  details.classList.toggle("is-closing", !opening);
+
+  const containerAnimation = details.animate(
+    opening
+      ? [
+          { height: `${startHeight}px`, offset: 0 },
+          { height: `${overshootHeight}px`, offset: 0.78 },
+          { height: `${endHeight}px`, offset: 1 }
+        ]
+      : [
+          { height: `${startHeight}px`, offset: 0 },
+          { height: `${Math.max(summaryHeight - 3, 0)}px`, offset: 0.82 },
+          { height: `${summaryHeight}px`, offset: 1 }
+        ],
+    {
+      duration: opening ? 560 : 380,
+      easing: opening ? "cubic-bezier(.34,1.56,.64,1)" : "cubic-bezier(.4,0,.2,1)",
+      fill: "both"
+    }
+  );
+
+  content.animate(
+    opening
+      ? [
+          { opacity: 0, transform: "translateY(-12px) scale(.985)" },
+          { opacity: 1, transform: "translateY(0) scale(1)" }
+        ]
+      : [
+          { opacity: 1, transform: "translateY(0) scale(1)" },
+          { opacity: 0, transform: "translateY(-8px) scale(.99)" }
+        ],
+    {
+      duration: opening ? 460 : 240,
+      delay: opening ? 55 : 0,
+      easing: opening ? "cubic-bezier(.22,1,.36,1)" : "cubic-bezier(.4,0,1,1)",
+      fill: "both"
+    }
+  );
+
+  containerAnimation.addEventListener("finish", () => {
+    if (!opening) details.open = false;
+    details.classList.remove("is-opening", "is-closing");
+    delete details.dataset.animating;
+    containerAnimation.cancel();
+    content.getAnimations().forEach((animation) => animation.cancel());
+  }, { once: true });
 }
 
 function handleDeleteAction(action) {
