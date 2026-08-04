@@ -14,6 +14,7 @@ const MIME = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".png": "image/png",
+  ".gif": "image/gif",
   ".ico": "image/x-icon",
   ".svg": "image/svg+xml"
 };

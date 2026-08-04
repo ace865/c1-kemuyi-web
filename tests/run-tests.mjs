@@ -1,4 +1,5 @@
 await import("./data-check.mjs");
+await import("./questions-loading-check.mjs");
 await import("./storage-check.mjs");
 await import("./exam-check.mjs");
 await import("./static-check.mjs");

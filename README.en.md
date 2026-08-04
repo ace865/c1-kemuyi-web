@@ -1,4 +1,4 @@
-![C1 Theory Test Assistant](docs/assets/readme-cover.svg)
+![C1 Driving Test Assistant](docs/assets/readme-cover.svg)
 
 <p align="center">
   <strong>
@@ -26,15 +26,15 @@
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
-<h1 align="center">Welcome to C1 Theory Test Assistant</h1>
+<h1 align="center">Welcome to C1 Driving Test Assistant</h1>
 
-This is an offline Windows study tool for China's C1 theory test. The application bundles 2,194 questions and 787 images; progress, wrong answers, and exam history remain on the device.
+This is an offline Windows study tool for China's C1 Subject 1 and Subject 4 tests. It bundles 2,194 Subject 1 questions, 1,833 Subject 4 questions, and 1,426 images. Progress is isolated by subject and remains on the device.
 
 The interface is built with HTML, CSS, and JavaScript, with Electron providing the desktop runtime. No account, remote question service, or external API is required.
 
 ## Practice, exam, and review in one place
 
-Sequential practice covers the full bank, while non-repeating random sessions and wrong-answer practice target weak areas. Mock exams follow a 100-question, 45-minute, 90-point format and retain the latest 20 results for per-question review.
+Sequential, random, wrong-answer, and focused practice cover single-choice, true/false, and multiple-choice questions. Subject 1 mock exams use 100 questions in 45 minutes; Subject 4 uses 50 in 30 minutes. Both require 90 points and retain the latest 20 results for review.
 
 <p align="center">
   <img src="docs/assets/app-preview.png" alt="C1 Theory Test Assistant interface" width="960">

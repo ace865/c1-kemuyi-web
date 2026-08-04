@@ -4,28 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#111111" />
-    <meta name="description" content="C1 手动挡科目一刷题与模拟考试工具" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" />
-    <title>C1 手动挡科目一通关助手</title>
+    <meta name="description" content="C1 驾考科目一/科目四离线刷题、专项练习与模拟考试工具" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'" />
+    <title>C1 驾考通关助手</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23111'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='26' font-weight='700' fill='white'%3EC1%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./src/css/styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <header class="site-header">
         <div class="header-inner">
+          <button id="top-my-button" class="top-my-button" type="button" aria-label="进入我的">
+            <span class="nav-icon" data-icon="my" aria-hidden="true"></span>
+            <span>我的</span>
+          </button>
           <button class="brand-button" id="brand-button" type="button" aria-label="返回首页">
             <span class="brand-mark" aria-hidden="true">C1</span>
-            <span>C1 手动挡科目一通关助手</span>
+            <span>C1 驾考通关助手</span>
           </button>
-          <button id="profile-switch-button" class="profile-switch" type="button" hidden>
-            <span id="active-profile-name">本地用户</span>
-            <span aria-hidden="true">切换</span>
-          </button>
+          <button id="subject-toggle" class="subject-toggle" type="button" data-subject="1" aria-label="切换科目">科目一</button>
         </div>
       </header>
 
       <main id="app" class="main-content">
-        <!-- 全局背景浮动光斑，纯装饰用 -->
         <div class="ambient-particles" aria-hidden="true">
           <div class="particle particle-1"></div>
           <div class="particle particle-2"></div>
@@ -34,13 +35,12 @@
           <div class="particle particle-5"></div>
         </div>
 
-        <!-- 加载页：开屏动画 + 进度条 -->
         <section id="loading-view" class="state-panel splash-screen" aria-live="polite">
           <div class="splash-logo" aria-hidden="true">C1</div>
           <div class="loader" aria-hidden="true"></div>
           <h1 class="splash-title" id="splash-title">正在加载题库</h1>
-          <p>正在整理全国通用科目一题目…</p>
-          <div class="splash-progress">
+          <p>正在整理全国通用驾考题库，加载完成后可离线刷题。</p>
+          <div class="splash-progress" aria-hidden="true">
             <div class="splash-progress-bar" id="splash-progress-bar"></div>
           </div>
         </section>
@@ -48,15 +48,15 @@
         <section id="error-view" class="state-panel" hidden>
           <div class="state-icon" aria-hidden="true">!</div>
           <h1>题库加载失败</h1>
-          <p id="error-message">请确认已通过本地 HTTP 服务打开页面。</p>
+          <p id="error-message">请确认题库文件存在后重试。</p>
           <button id="retry-button" class="button button-primary" type="button">重新加载</button>
         </section>
 
         <section id="profile-view" class="profile-view" hidden>
           <div class="profile-card">
-            <p class="eyebrow">仅保存在这台电脑</p>
-            <h1>选择本地档案</h1>
-            <p class="page-copy">每个人使用独立档案，学习进度和考试记录不会混在一起。</p>
+            <p class="eyebrow">仅保存在本机</p>
+            <h1>切换本地档案</h1>
+            <p class="page-copy">每个档案的刷题、错题和考试记录互不混用。首次打开会自动创建“我的档案”。</p>
             <div id="profile-list" class="profile-list"></div>
             <form id="profile-form" class="profile-form">
               <label for="profile-name-input">新建档案</label>
@@ -70,70 +70,100 @@
           </div>
         </section>
 
-        <!-- 首页：hero + 统计 + 功能入口 -->
         <section id="home-view" hidden>
-          <div class="hero">
-            <p class="eyebrow">全国通用题库 · C1 科目一</p>
-            <h1 class="gradient-text-hero">稳稳刷题，踏实上考场</h1>
-            <p class="hero-tip">连续 3 次模拟考试 92 分以上，再去约考更稳</p>
+          <div class="hero status-hero">
+            <p class="eyebrow">学习状态</p>
+            <h1 id="home-title">稳稳刷题，踏实上考场</h1>
+            <p id="home-advice" class="hero-tip">连续 3 次模拟考试 92 分以上，再去约考更稳。</p>
+            <div id="recent-scores" class="score-strip" aria-label="最近三次模考成绩"></div>
           </div>
+
           <div class="stats-grid" aria-label="刷题统计">
             <article class="stat-card"><span class="stat-label">总题数</span><strong id="total-count" class="stat-value">--</strong></article>
             <article class="stat-card"><span class="stat-label">已做题数</span><strong id="answered-count" class="stat-value">0</strong></article>
             <article class="stat-card"><span class="stat-label">刷题正确率</span><strong id="accuracy-value" class="stat-value">0%</strong></article>
             <article class="stat-card"><span class="stat-label">错题数</span><strong id="wrong-count" class="stat-value">0</strong></article>
           </div>
+
+          <section class="memory-preview" aria-labelledby="memory-preview-title">
+            <div class="section-heading compact-heading">
+              <div><p class="eyebrow">考前速记</p><h2 id="memory-preview-title">快考试前先看这 3 条</h2></div>
+              <button id="memory-more-button" class="button button-secondary" type="button">查看完整速记</button>
+            </div>
+            <ul class="memory-preview-list">
+              <li>扣分罚款题先抓关键词：证、牌、酒、逃、假、超、占、逆。</li>
+              <li>灯光题先分场景：会车用近光，雾天开雾灯和危险报警闪光灯。</li>
+              <li>考前不要只刷新题，优先复盘错题和最近模考错题。</li>
+            </ul>
+          </section>
+
           <div class="home-actions">
             <button class="feature-card" type="button" data-view="practice-hub">
-              <span class="feature-kicker">刷题模式</span><strong>顺序、随机与错题练习</strong><span>立即开始 →</span>
+              <span class="feature-kicker">刷题</span><strong>顺序、随机与错题练习</strong><span>开始刷题 →</span>
+            </button>
+            <button class="feature-card" type="button" data-view="special-hub">
+              <span class="feature-kicker">专项</span><strong>图片、灯光、标志、扣分罚款</strong><span>补薄弱点 →</span>
             </button>
             <button class="feature-card feature-card-dark" type="button" data-view="exam-hub">
-              <span class="feature-kicker">模拟考试</span><strong>100题 · 45分钟 · 90分及格</strong><span>进入考场 →</span>
+              <span class="feature-kicker">模考</span><strong>100题 · 45分钟 · 90分及格</strong><span>进入考场 →</span>
+            </button>
+            <button id="home-help-button" class="feature-card" type="button">
+              <span class="feature-kicker">说明</span><strong>查看推荐学习路线和数据说明</strong><span>怎么使用 →</span>
             </button>
           </div>
         </section>
 
         <section id="practice-hub-view" hidden>
-          <div class="view-tabs" id="practice-view-tabs">
-            <button class="view-tab is-active" type="button" data-view="practice-hub"><span class="tab-icon">✓</span>刷题模式</button>
-            <button class="view-tab" type="button" data-view="exam-hub"><span class="tab-icon">◷</span>模拟考试</button>
-            <button class="view-tab" type="button" data-view="wrong-book"><span class="tab-icon">×</span>错题本</button>
-            <div class="tab-indicator"></div>
-          </div>
           <div class="page-heading">
-            <div><p class="eyebrow">刷题模式</p><h1>选择练习方式</h1><p>练习时即时判题，桌面端右侧同步显示解析。</p></div>
+            <div>
+              <p class="eyebrow">刷题模式</p>
+              <h1>选择练习方式</h1>
+              <p>练习时即时判题，做错的题会自动进入错题本。</p>
+            </div>
           </div>
           <div class="mode-list mode-list-wide">
-            <button class="mode-card" type="button" data-mode="sequential"><span class="mode-index">01</span><span class="mode-copy"><strong>顺序练习</strong><small id="sequence-progress">从第 1 题开始</small></span><span class="mode-arrow">→</span></button>
-            <button class="mode-card" type="button" data-mode="random"><span class="mode-index">02</span><span class="mode-copy"><strong>随机练习</strong><small>题目随机排列，单轮不重复</small></span><span class="mode-arrow">→</span></button>
-            <button class="mode-card" type="button" data-mode="wrong"><span class="mode-index">03</span><span class="mode-copy"><strong>错题练习</strong><small id="wrong-mode-copy">当前没有错题</small></span><span class="mode-arrow">→</span></button>
+            <button class="mode-card" type="button" data-mode="sequential">
+              <span class="mode-index">01</span><span class="mode-copy"><strong>顺序练习</strong><small id="sequence-progress">从第 1 题开始</small></span><span class="mode-arrow">→</span>
+            </button>
+            <button class="mode-card" type="button" data-mode="random">
+              <span class="mode-index">02</span><span class="mode-copy"><strong>随机练习</strong><small>随机不重复，适合复习阶段</small></span><span class="mode-arrow">→</span>
+            </button>
+            <button class="mode-card" type="button" data-mode="wrong">
+              <span class="mode-index">03</span><span class="mode-copy"><strong>错题练习</strong><small id="wrong-mode-copy">当前没有错题</small></span><span class="mode-arrow">→</span>
+            </button>
           </div>
         </section>
 
-        <section id="wrong-book-view" hidden>
-          <div class="view-tabs" id="view-tabs">
-            <button class="view-tab" type="button" data-view="wrong-book" data-wrong-filter="practice"><span class="tab-icon">✓</span>刷题错题<span class="tab-badge" id="tab-badge-practice"></span></button>
-            <button class="view-tab" type="button" data-view="wrong-book" data-wrong-filter="exam"><span class="tab-icon">◷</span>考试错题<span class="tab-badge" id="tab-badge-exam"></span></button>
-            <button class="view-tab is-active" type="button" data-view="wrong-book" data-wrong-filter="all"><span class="tab-icon">×</span>全部错题<span class="tab-badge" id="tab-badge-all"></span></button>
-            <div class="tab-indicator" id="tab-indicator"></div>
-          </div>
+        <section id="special-hub-view" hidden>
           <div class="page-heading">
-            <div><p class="eyebrow">复盘薄弱点</p><h1>错题本</h1><p id="wrong-book-summary">做错的题会自动保存在这里。</p></div>
-            <div class="wrong-book-actions">
-              <button id="clear-wrong-book" class="button button-secondary" type="button">清空错题本</button>
-              <button id="start-wrong-practice" class="button button-primary" type="button">练习错题</button>
+            <div>
+              <p class="eyebrow">专项练习</p>
+              <h1>集中补薄弱点</h1>
+              <p>专项按题目内容关键词自动整理，适合集中复习，不代表人工逐题分类。</p>
             </div>
+          </div>
+          <div id="special-category-list" class="mode-list special-grid"></div>
+        </section>
+
+        <section id="wrong-book-view" hidden>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">复盘薄弱点</p>
+              <h1>错题本</h1>
+              <p id="wrong-book-summary">做错的题会自动保存在这里。</p>
+            </div>
+            <button id="start-wrong-practice" class="button button-primary" type="button">练习错题</button>
           </div>
           <div id="wrong-book-content"></div>
         </section>
 
-        <!-- 练习模式：左侧题目 + 右侧解析 -->
         <section id="practice-view" hidden>
           <div class="practice-topbar">
             <button id="leave-practice-button" class="icon-button" type="button" aria-label="退出练习">←</button>
             <div class="practice-meta"><strong id="practice-mode-title">顺序练习</strong><span id="practice-position">1 / 2194</span></div>
             <span id="question-type" class="type-badge">单选题</span>
           </div>
+          <div id="practice-mini-stats" class="mini-stats"></div>
           <div id="practice-workspace" class="practice-workspace">
             <article id="question-card" class="question-card question-pane">
               <div id="question-number" class="question-number">第 1 题</div>
@@ -148,33 +178,39 @@
                 <p id="correct-answer" class="correct-answer"></p>
                 <div class="analysis-block"><h2>题目解析</h2><p id="answer-analysis"></p></div>
                 <div id="answer-tip-block" class="analysis-block analysis-tip" hidden><h2>答题提示</h2><p id="answer-tip"></p></div>
-                <div id="wrong-resolution" class="wrong-resolution" hidden><p>这道题已经答对，要从错题本移除吗？</p><div class="resolution-actions"><button id="remove-wrong-button" class="button button-primary" type="button">移出错题本</button><button id="keep-wrong-button" class="button button-secondary" type="button">暂时保留</button></div></div>
+                <div id="wrong-resolution" class="wrong-resolution" hidden>
+                  <p id="wrong-resolution-copy">这道题已经答对，要从错题本移除吗？</p>
+                  <div class="resolution-actions">
+                    <button id="remove-wrong-button" class="button button-primary" type="button">移出错题本</button>
+                    <button id="keep-wrong-button" class="button button-secondary" type="button">暂时保留</button>
+                  </div>
+                </div>
               </section>
-              <button id="next-question-button" class="button button-primary next-button" type="button" aria-keyshortcuts="Space Enter" title="快捷键：空格或回车" hidden>下一题</button>
+              <button id="next-question-button" class="button button-primary next-button" type="button" aria-keyshortcuts="Space Enter" hidden>下一题</button>
             </aside>
           </div>
           <div id="practice-empty" class="state-panel compact-state" hidden></div>
         </section>
 
         <section id="exam-hub-view" hidden>
-          <div class="view-tabs" id="exam-view-tabs">
-            <button class="view-tab" type="button" data-view="practice-hub"><span class="tab-icon">✓</span>刷题模式</button>
-            <button class="view-tab is-active" type="button" data-view="exam-hub"><span class="tab-icon">◷</span>模拟考试</button>
-            <button class="view-tab" type="button" data-view="wrong-book"><span class="tab-icon">×</span>错题本</button>
-            <div class="tab-indicator"></div>
-          </div>
           <div class="page-heading exam-heading">
-            <div><p class="eyebrow">模拟考试</p><h1>按正式节奏完成一套题</h1><p>100题，45分钟，90分及格。考试中不显示答案。</p></div>
+            <div>
+              <p class="eyebrow">模拟考试</p>
+              <h1>按正式节奏完成一套题</h1>
+              <p>考试中不显示答案。</p>
+            </div>
             <button id="new-exam-button" class="button button-primary" type="button">开始新考试</button>
           </div>
           <div id="resume-exam-card" class="resume-card" hidden>
             <div><span class="status-pill">未完成</span><h2>你有一场进行中的考试</h2><p id="resume-exam-copy"></p></div>
             <button id="resume-exam-button" class="button button-primary" type="button">继续考试</button>
           </div>
-          <section class="section-block"><div class="section-heading"><div><p class="eyebrow">本地记录</p><h2>最近考试</h2></div></div><div id="exam-history-list" class="history-list"></div></section>
+          <section class="section-block">
+            <div class="section-heading"><div><p class="eyebrow">本地记录</p><h2>最近考试</h2></div></div>
+            <div id="exam-history-list" class="history-list"></div>
+          </section>
         </section>
 
-        <!-- 模拟考试：左侧答题卡 + 右侧题目 -->
         <section id="exam-view" hidden>
           <div class="exam-topbar">
             <button id="leave-exam-button" class="icon-button" type="button" aria-label="暂时离开考试">←</button>
@@ -184,19 +220,18 @@
           </div>
           <button id="exam-navigator-toggle" class="navigator-toggle button button-secondary" type="button">查看题号</button>
           <div class="exam-layout">
-            <aside id="exam-navigator" class="exam-navigator"><div class="navigator-header"><strong>答题卡</strong><button id="exam-navigator-close" class="icon-button small-icon" type="button" aria-label="关闭答题卡">×</button></div><div class="navigator-legend"><span><i class="legend-dot correct"></i>正确</span><span><i class="legend-dot wrong"></i>错误</span><span><i class="legend-dot current"></i>当前</span></div><div id="exam-number-grid" class="number-grid"></div></aside>
+            <aside id="exam-navigator" class="exam-navigator"><div class="navigator-header"><strong>答题卡</strong><button id="exam-navigator-close" class="icon-button small-icon" type="button" aria-label="关闭答题卡">×</button></div><div class="navigator-legend"><span><i class="legend-dot answered"></i>已答</span><span><i class="legend-dot current"></i>当前</span></div><div id="exam-number-grid" class="number-grid"></div></aside>
             <div id="exam-backdrop" class="exam-backdrop" hidden></div>
             <article class="question-card exam-question-card">
               <div id="exam-question-number" class="question-number">第 1 题</div>
               <h1 id="exam-question-text" class="question-text"></h1>
               <div id="exam-question-media" class="question-media" hidden></div>
               <div id="exam-options-list" class="options-list" role="group" aria-label="考试选项"></div>
-              <div class="exam-question-actions"><button id="exam-previous-button" class="button button-secondary" type="button" aria-keyshortcuts="Backspace" title="快捷键：退格键">上一题</button><button id="exam-next-button" class="button button-primary" type="button" aria-keyshortcuts="Space Enter" title="快捷键：空格或回车">下一题</button></div>
+              <div class="exam-question-actions"><button id="exam-previous-button" class="button button-secondary" type="button">上一题</button><button id="exam-next-button" class="button button-primary" type="button">下一题</button></div>
             </article>
           </div>
         </section>
 
-        <!-- 考试结果：分数 + 逐题复盘 -->
         <section id="exam-result-view" hidden>
           <div id="result-summary" class="result-summary"></div>
           <button id="back-to-exam-hub-button" class="button button-secondary result-back" type="button">返回考试记录</button>
@@ -213,18 +248,52 @@
             </div>
           </div>
         </section>
+
+        <section id="my-view" hidden>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">我的</p>
+              <h1>档案、说明与数据管理</h1>
+              <p>所有数据只保存在当前设备，不需要账号，不上传云端。</p>
+            </div>
+          </div>
+          <div class="settings-grid">
+            <section class="settings-card">
+              <h2>当前档案</h2>
+              <p id="my-profile-name">我的档案</p>
+              <button id="switch-profile-from-my" class="button button-secondary" type="button">切换档案</button>
+            </section>
+            <section class="settings-card">
+              <h2>界面设置</h2>
+              <label class="switch-row"><span><strong>减少动画</strong><small>关闭页面和卡片动效，只保留颜色反馈。</small></span><input id="reduce-motion-toggle" type="checkbox" /></label>
+            </section>
+          </div>
+
+          <section class="section-block">
+            <div class="section-heading"><div><p class="eyebrow">使用说明</p><h2>建议先看快速开始和学习路线</h2></div></div>
+            <div id="help-content" class="help-list"></div>
+          </section>
+
+          <section class="section-block">
+            <div class="section-heading"><div><p class="eyebrow">数据管理</p><h2>删除当前档案数据</h2></div></div>
+            <div class="danger-zone">
+              <button class="danger-action" type="button" data-delete-action="wrong">清空错题本<span>删除当前档案错题和错题掌握统计，删除后不能恢复。</span></button>
+              <button class="danger-action" type="button" data-delete-action="history">清空考试记录<span>删除当前档案最近考试记录。进行中的考试需先交卷或放弃。</span></button>
+              <button class="danger-action" type="button" data-delete-action="progress">清空刷题进度和正确率<span>重置已做题数、累计正确率和顺序练习位置。</span></button>
+              <button class="danger-action danger-action-strong" type="button" data-delete-action="all">清空当前档案全部学习数据<span>保留档案名称和界面设置，清空刷题、错题、考试和进行中考试。</span></button>
+            </div>
+          </section>
+        </section>
       </main>
 
       <nav id="bottom-nav" class="bottom-nav" aria-label="主要导航" hidden>
-        <button class="nav-item is-active" type="button" data-view="home"><span class="nav-symbol">⌂</span><span>首页</span></button>
-        <button class="nav-item" type="button" data-view="practice-hub"><span class="nav-symbol">✓</span><span>刷题</span></button>
-        <button class="nav-item" type="button" data-view="exam-hub"><span class="nav-symbol">◷</span><span>模考</span></button>
-        <button class="nav-item" type="button" data-view="wrong-book"><span class="nav-symbol">×</span><span>错题本</span><span id="nav-wrong-badge" class="nav-badge" hidden>0</span></button>
+        <button class="nav-item is-active" type="button" data-view="home" aria-label="首页"><span class="nav-icon" data-icon="home"></span><span>首页</span></button>
+        <button class="nav-item" type="button" data-view="practice-hub" aria-label="刷题"><span class="nav-icon" data-icon="practice"></span><span>刷题</span></button>
+        <button class="nav-item" type="button" data-view="special-hub" aria-label="专项"><span class="nav-icon" data-icon="special"></span><span>专项</span></button>
+        <button class="nav-item" type="button" data-view="exam-hub" aria-label="模考"><span class="nav-icon" data-icon="exam"></span><span>模考</span></button>
       </nav>
       <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     </div>
-    <!-- 高级特效层 -->
-    <div class="grain-overlay" aria-hidden="true"></div>
     <script type="module" src="./src/js/app.js"></script>
   </body>
 </html>

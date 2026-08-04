@@ -1,4 +1,4 @@
-![C1 科目一通关助手](docs/assets/readme-cover.svg)
+![C1 驾考通关助手](docs/assets/readme-cover.svg)
 
 <p align="center">
   <strong>
@@ -26,15 +26,15 @@
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
-<h1 align="center">欢迎使用 C1 科目一通关助手</h1>
+<h1 align="center">欢迎使用 C1 驾考通关助手</h1>
 
-这是一个面向 Windows 的 C1 科目一离线学习工具。2,194 道题目与 787 张配图随应用提供，刷题进度、错题和考试记录只保存在本机。
+这是一个面向 Windows 的 C1 科目一 / 科目四离线学习工具。应用内置科目一 2,194 题、科目四 1,833 题及 1,426 张配图；两科进度独立保存，数据只留在本机。
 
 项目使用原生 HTML、CSS 和 JavaScript 构建界面，以 Electron 提供桌面运行环境。没有账号系统，也不依赖远程题库或在线接口。
 
 ## 把练习、考试和复盘放在一起
 
-顺序练习负责覆盖完整题库，随机练习保证单轮不重复，错题练习集中处理薄弱项。模拟考试按 100 题、45 分钟、90 分及格执行，并保留最近 20 场考试记录供逐题复盘。
+顺序、随机、错题和专项练习覆盖单选、判断与多选题。科目一模考为 100 题 / 45 分钟，科目四为 50 题 / 30 分钟，均以 90 分为合格线，并保留最近 20 场记录供逐题复盘。
 
 <p align="center">
   <img src="docs/assets/app-preview.png" alt="C1 科目一通关助手界面" width="960">

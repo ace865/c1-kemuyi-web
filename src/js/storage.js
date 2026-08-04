@@ -1,11 +1,10 @@
-// localStorage 存储模块，用key前缀隔离不同版本的数据
-const LEGACY_KEY = "c1-kemuyi-progress-v1";       // v1版本的旧数据key，用于兼容迁移
-const REGISTRY_KEY = "c1-kemuyi-profiles-v2";     // 档案注册表
-const PROFILE_KEY_PREFIX = "c1-kemuyi-profile-v2:"; // 单个档案数据的key前缀
-const DATA_VERSION = 2;
+const LEGACY_KEY = "c1-kemuyi-progress-v1";
+const REGISTRY_KEY = "c1-kemuyi-profiles-v2";
+const PROFILE_KEY_PREFIX = "c1-kemuyi-profile-v2:";
+const DATA_VERSION = 3;
 const MAX_HISTORY = 20;
+const DEFAULT_SUBJECT = 1;
 
-// 创建空白档案数据结构
 export function createEmptyProfileData() {
   return {
     version: DATA_VERSION,
@@ -13,14 +12,16 @@ export function createEmptyProfileData() {
     totalAttempts: 0,
     correctAttempts: 0,
     wrongIds: [],
-    wrongSources: {}, // { [questionId]: "practice" | "exam" }
+    wrongStats: {},
     sequentialIndex: 0,
     activeExam: null,
-    examHistory: []
+    examHistory: [],
+    preferences: {
+      reduceMotion: false
+    }
   };
 }
 
-// 初始化档案系统：如果存在v1旧数据就自动迁移到v2
 export function initializeProfiles() {
   const registry = readRegistry();
   if (registry.profiles.length || registry.legacyMigrated) return registry.profiles;
@@ -39,7 +40,8 @@ export function initializeProfiles() {
       wrongIds: toStringArray(legacy.wrongIds),
       sequentialIndex: toNonNegativeInteger(legacy.sequentialIndex)
     };
-    writeJson(profileKey(profile.id), data);
+    data.wrongStats = createStatsForWrongIds(data.wrongIds);
+    writeSubjectData(profile.id, DEFAULT_SUBJECT, data);
     registry.profiles.push(profile);
   }
 
@@ -48,11 +50,16 @@ export function initializeProfiles() {
   return registry.profiles;
 }
 
+export function ensureDefaultProfile() {
+  const profiles = initializeProfiles();
+  if (profiles.length) return profiles[0];
+  return createProfile("我的档案");
+}
+
 export function listProfiles() {
   return readRegistry().profiles;
 }
 
-// 新建档案：校验重名，写入注册表和空数据
 export function createProfile(name) {
   const normalizedName = normalizeProfileName(name);
   const registry = readRegistry();
@@ -63,59 +70,60 @@ export function createProfile(name) {
 
   const profile = createProfileRecord(normalizedName);
   registry.profiles.push(profile);
-  writeJson(profileKey(profile.id), createEmptyProfileData());
+  writeSubjectData(profile.id, DEFAULT_SUBJECT, createEmptyProfileData());
   writeRegistry(registry);
   return profile;
 }
 
-// 从localStorage读取档案数据，做了类型兜底防止脏数据
-export function loadProfileData(profileId) {
-  const data = readJson(profileKey(profileId));
-  if (!data || data.version !== DATA_VERSION) return createEmptyProfileData();
-
-  const totalAttempts = toNonNegativeInteger(data.totalAttempts);
-  return {
-    version: DATA_VERSION,
-    answeredIds: toStringArray(data.answeredIds),
-    totalAttempts,
-    correctAttempts: Math.min(toNonNegativeInteger(data.correctAttempts), totalAttempts),
-    wrongIds: toStringArray(data.wrongIds),
-    sequentialIndex: toNonNegativeInteger(data.sequentialIndex),
-    activeExam: data.activeExam && typeof data.activeExam === "object" ? data.activeExam : null,
-    examHistory: Array.isArray(data.examHistory) ? data.examHistory.slice(0, MAX_HISTORY) : []
-  };
+export function loadProfileData(profileId, subject = DEFAULT_SUBJECT) {
+  let data = readJson(subjectKey(profileId, subject));
+  // Migration: try old key format (no subject suffix)
+  if (!data && subject === DEFAULT_SUBJECT) {
+    data = readJson(oldProfileKey(profileId));
+    if (data) {
+      // Save to new key format for future loads
+      writeSubjectData(profileId, subject, normalizeProfileData(data));
+    }
+  }
+  return normalizeProfileData(data);
 }
 
-// 数据清洗：过滤掉题库中已不存在的题目ID，防止脏数据
 export function sanitizeProfileData(data, questions) {
-  const validIds = new Set(questions.map((question) => question.id));
+  const normalized = normalizeProfileData(data);
+  const validIds = new Set(questions.map((q) => q.id));
   const maxIndex = Math.max(questions.length - 1, 0);
-  const activeExam = isValidExam(data.activeExam, validIds) ? sanitizeExam(data.activeExam) : null;
+  const wrongIds = unique(normalized.wrongIds.filter((id) => validIds.has(id)));
+  const wrongStats = {};
+
+  for (const id of Object.keys(normalized.wrongStats)) {
+    if (validIds.has(id)) wrongStats[id] = sanitizeWrongStat(normalized.wrongStats[id]);
+  }
+  for (const id of wrongIds) {
+    if (!wrongStats[id]) wrongStats[id] = createWrongStat();
+  }
 
   return {
-    ...data,
-    version: DATA_VERSION,
-    answeredIds: unique(data.answeredIds.filter((id) => validIds.has(id))),
-    wrongIds: unique(data.wrongIds.filter((id) => validIds.has(id))),
-    sequentialIndex: Math.min(data.sequentialIndex, maxIndex),
-    activeExam,
-    examHistory: data.examHistory
+    ...normalized,
+    answeredIds: unique(normalized.answeredIds.filter((id) => validIds.has(id))),
+    wrongIds,
+    wrongStats,
+    sequentialIndex: Math.min(normalized.sequentialIndex, maxIndex),
+    activeExam: isValidExam(normalized.activeExam, validIds) ? sanitizeExam(normalized.activeExam) : null,
+    examHistory: normalized.examHistory
       .filter((record) => isValidExamRecord(record, validIds))
       .slice(0, MAX_HISTORY)
   };
 }
 
-// 保存档案数据，写入失败时返回false（localStorage可能满）
-export function saveProfileData(profileId, data) {
+export function saveProfileData(profileId, data, subject = DEFAULT_SUBJECT) {
   try {
-    writeJson(profileKey(profileId), { ...data, version: DATA_VERSION, examHistory: data.examHistory.slice(0, MAX_HISTORY) });
+    writeSubjectData(profileId, subject, normalizeProfileData(data));
     return true;
   } catch {
     return false;
   }
 }
 
-// 昵称校验：空值、超长都不行
 export function normalizeProfileName(name) {
   const normalized = String(name ?? "").trim();
   if (!normalized) throw new Error("请输入昵称");
@@ -123,9 +131,43 @@ export function normalizeProfileName(name) {
   return normalized;
 }
 
+function normalizeProfileData(data) {
+  const base = createEmptyProfileData();
+  if (!data || typeof data !== "object") return base;
+
+  const totalAttempts = toNonNegativeInteger(data.totalAttempts);
+  const wrongIds = toStringArray(data.wrongIds);
+  const wrongStats = {};
+  const rawStats = data.wrongStats && typeof data.wrongStats === "object" ? data.wrongStats : {};
+
+  for (const id of Object.keys(rawStats)) {
+    if (typeof id === "string") wrongStats[id] = sanitizeWrongStat(rawStats[id]);
+  }
+  for (const id of wrongIds) {
+    if (!wrongStats[id]) wrongStats[id] = createWrongStat();
+  }
+
+  return {
+    version: DATA_VERSION,
+    answeredIds: toStringArray(data.answeredIds),
+    totalAttempts,
+    correctAttempts: Math.min(toNonNegativeInteger(data.correctAttempts), totalAttempts),
+    wrongIds,
+    wrongStats,
+    sequentialIndex: toNonNegativeInteger(data.sequentialIndex),
+    activeExam: data.activeExam && typeof data.activeExam === "object" ? data.activeExam : null,
+    examHistory: Array.isArray(data.examHistory) ? data.examHistory.slice(0, MAX_HISTORY) : [],
+    preferences: {
+      ...base.preferences,
+      ...(data.preferences && typeof data.preferences === "object" ? data.preferences : {}),
+      reduceMotion: Boolean(data.preferences?.reduceMotion)
+    }
+  };
+}
+
 function readRegistry() {
   const stored = readJson(REGISTRY_KEY);
-  if (!stored || stored.version !== DATA_VERSION || !Array.isArray(stored.profiles)) {
+  if (!stored || typeof stored !== "object" || !Array.isArray(stored.profiles)) {
     return { version: DATA_VERSION, legacyMigrated: false, profiles: [] };
   }
   return {
@@ -136,7 +178,7 @@ function readRegistry() {
 }
 
 function writeRegistry(registry) {
-  writeJson(REGISTRY_KEY, registry);
+  writeJson(REGISTRY_KEY, { ...registry, version: DATA_VERSION });
 }
 
 function createProfileRecord(name) {
@@ -152,8 +194,16 @@ function createId(prefix) {
   return `${prefix}-${randomId}`;
 }
 
-function profileKey(profileId) {
+function subjectKey(profileId, subject) {
+  return `${PROFILE_KEY_PREFIX}${profileId}:${subject}`;
+}
+
+function oldProfileKey(profileId) {
   return `${PROFILE_KEY_PREFIX}${profileId}`;
+}
+
+function writeSubjectData(profileId, subject, data) {
+  writeJson(subjectKey(profileId, subject), data);
 }
 
 function readJson(key) {
@@ -181,8 +231,8 @@ function isValidExam(value, validIds) {
   return value
     && value.status === "active"
     && Array.isArray(value.questionIds)
-    && value.questionIds.length === 100
-    && new Set(value.questionIds).size === 100
+    && [50, 100].includes(value.questionIds.length)
+    && new Set(value.questionIds).size === value.questionIds.length
     && value.questionIds.every((id) => validIds.has(id))
     && Number.isFinite(value.startedAt)
     && Number.isFinite(value.endAt);
@@ -192,7 +242,7 @@ function isValidExamRecord(value, validIds) {
   return value
     && typeof value.id === "string"
     && Array.isArray(value.questionIds)
-    && value.questionIds.length === 100
+    && [50, 100].includes(value.questionIds.length)
     && value.questionIds.every((id) => validIds.has(id))
     && value.answers
     && typeof value.answers === "object"
@@ -204,6 +254,28 @@ function sanitizeExam(exam) {
     ...exam,
     answers: exam.answers && typeof exam.answers === "object" ? exam.answers : {},
     currentIndex: Math.min(toNonNegativeInteger(exam.currentIndex), exam.questionIds.length - 1)
+  };
+}
+
+function createStatsForWrongIds(ids) {
+  return Object.fromEntries(unique(ids).map((id) => [id, createWrongStat()]));
+}
+
+function createWrongStat() {
+  return {
+    wrongCount: 1,
+    correctStreak: 0,
+    lastWrongAt: 0,
+    lastPracticedAt: 0
+  };
+}
+
+function sanitizeWrongStat(value) {
+  return {
+    wrongCount: Math.max(0, toNonNegativeInteger(value?.wrongCount)),
+    correctStreak: Math.max(0, toNonNegativeInteger(value?.correctStreak)),
+    lastWrongAt: toNonNegativeInteger(value?.lastWrongAt),
+    lastPracticedAt: toNonNegativeInteger(value?.lastPracticedAt)
   };
 }
 
