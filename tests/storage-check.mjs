@@ -43,6 +43,12 @@ assert.equal(saveProfileData(alice.id, aliceData), true);
 assert.equal(loadProfileData(alice.id).totalAttempts, 5);
 assert.equal(loadProfileData(bob.id).totalAttempts, 0, "不同档案的数据必须隔离");
 
+const aliceSubject4Data = createEmptyProfileData();
+aliceSubject4Data.totalAttempts = 9;
+assert.equal(saveProfileData(alice.id, aliceSubject4Data, 4), true);
+assert.equal(loadProfileData(alice.id, 4).totalAttempts, 9, "科目四进度应独立保存");
+assert.equal(loadProfileData(alice.id, 1).totalAttempts, 5, "科目四进度不得覆盖科目一");
+
 const dirty = createEmptyProfileData();
 dirty.answeredIds = ["q1", "missing", "q1"];
 dirty.wrongIds = ["q2", "missing"];
@@ -52,4 +58,4 @@ assert.deepEqual(clean.answeredIds, ["q1"]);
 assert.deepEqual(clean.wrongIds, ["q2"]);
 assert.equal(clean.sequentialIndex, 1);
 
-console.log("本地档案检查通过：迁移、重名校验、隔离和清理正常。");
+console.log("本地档案检查通过：迁移、用户隔离、科目隔离和清理正常。");

@@ -1,4 +1,4 @@
-![C1 学科試験クリアアシスタント](docs/assets/readme-cover.svg)
+![C1 運転試験アシスタント](docs/assets/readme-cover.svg)
 
 <p align="center">
   <strong>
@@ -26,15 +26,15 @@
   <a href="https://github.com/ace865/c1-kemuyi-web/pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-2EA44F?style=flat-square"></a>
 </p>
 
-<h1 align="center">C1 学科試験クリアアシスタントへようこそ</h1>
+<h1 align="center">C1 運転試験アシスタントへようこそ</h1>
 
-中国の C1 学科試験に対応した Windows 向けオフライン学習ツールです。2,194 問と 787 枚の画像をアプリに収録し、進捗・誤答・試験履歴は端末内だけに保存します。
+中国の C1 科目一・科目四に対応した Windows 向けオフライン学習ツールです。科目一 2,194 問、科目四 1,833 問、画像 1,426 枚を収録し、科目ごとの進捗は端末内だけに保存します。
 
 画面は HTML、CSS、JavaScript、デスクトップ環境は Electron で構成されています。アカウント登録、オンライン問題データ、外部 API は不要です。
 
 ## 学習・模擬試験・復習を一つに
 
-順番学習で全問題を確認し、重複なしのランダム学習と誤答復習で弱点を整理できます。模擬試験は 100 問、45 分、90 点合格で実施し、直近 20 回の結果を問題ごとに復習できます。
+順番・ランダム・誤答・分野別学習で、単一選択、正誤、多肢選択問題を練習できます。模擬試験は科目一が 100 問 / 45 分、科目四が 50 問 / 30 分で、どちらも 90 点合格です。直近 20 回の結果を問題ごとに復習できます。
 
 <p align="center">
   <img src="docs/assets/app-preview.png" alt="C1 学科試験クリアアシスタントの画面" width="960">

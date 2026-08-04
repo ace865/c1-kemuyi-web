@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
-  <title id="title">C1 Theory Offline Desktop System</title>
+  <title id="title">C1 Driving Test Offline Desktop System</title>
   <desc id="desc">Technical cover showing offline status and dataset metrics.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -19,24 +19,24 @@
     <text x="72" y="74" fill="#35d6a4" font-size="18" letter-spacing="3">SYSTEM / C1-KEMUYI</text>
     <text x="1208" y="74" fill="#8da0ad" font-size="16" text-anchor="end">OFFLINE · WINDOWS</text>
 
-    <text x="70" y="192" fill="#f2f7f8" font-size="78" font-weight="700" letter-spacing="-3">C1 THEORY</text>
+    <text x="70" y="192" fill="#f2f7f8" font-size="78" font-weight="700" letter-spacing="-3">C1 DRIVER</text>
     <text x="74" y="240" fill="#9fb0ba" font-size="24" letter-spacing="6">DESKTOP TRAINING SYSTEM</text>
 
     <g transform="translate(72 316)">
       <g>
         <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
         <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">QUESTION BANK</text>
-        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">2,194</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">4,027</text>
       </g>
       <g transform="translate(278)">
         <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
         <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">LOCAL IMAGES</text>
-        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">787</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">1,426</text>
       </g>
       <g transform="translate(556)">
         <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
         <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">MOCK EXAM</text>
-        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">100 × 45m</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">100 / 50</text>
       </g>
       <g transform="translate(834)">
         <rect width="250" height="96" rx="8" fill="#10231f" stroke="#35d6a4" stroke-opacity=".65"/>
