@@ -1,7 +1,7 @@
 {
   "name": "c1-kemuyi-windows",
   "version": "1.0.0",
-  "description": "C1 手动挡科目一离线刷题与模拟考试 Windows 应用",
+  "description": "C1 科目一与科目四离线刷题、专项练习与模拟考试 Windows 应用",
   "author": "C1 Kemuyi Assistant",
   "license": "MIT",
   "private": true,
@@ -25,7 +25,7 @@
   },
   "build": {
     "appId": "com.local.c1kemuyi.assistant",
-    "productName": "C1 手动挡科目一通关助手",
+    "productName": "C1 驾考通关助手",
     "asar": true,
     "directories": {
       "buildResources": "build",
@@ -39,6 +39,7 @@
       "src/css/**/*",
       "src/js/**/*",
       "src/data/questions.offline.json",
+      "src/data/questions-subject4.json",
       "src/assets/question-images/**/*"
     ],
     "win": {
@@ -57,7 +58,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "C1 科目一通关助手",
+      "shortcutName": "C1 驾考通关助手",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     }

@@ -1,0 +1,42 @@
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard file deletions
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DELETION_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'approved-file-deletion') }}
+        run: |
+          deleted_files="$(git diff --name-only --diff-filter=D "$BASE_SHA...$HEAD_SHA")"
+          if [ -n "$deleted_files" ] && [ "$DELETION_APPROVED" != "true" ]; then
+            echo "File deletion requires maintainer approval and the approved-file-deletion label:"
+            echo "$deleted_files"
+            exit 1
+          fi
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies without desktop postinstall
+        run: npm ci --ignore-scripts
+
+      - name: Run repository checks
+        run: npm run check
