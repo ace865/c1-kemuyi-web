@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const dataPath = path.join(projectRoot, "src", "data", "questions.json");
+const dataPath = path.join(projectRoot, "src", "data", "questions.offline.json");
 const source = JSON.parse(await readFile(dataPath, "utf8"));
 
 assert.ok(Array.isArray(source), "题库根节点必须是数组");

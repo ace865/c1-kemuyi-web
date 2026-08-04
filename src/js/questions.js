@@ -1,9 +1,7 @@
-const QUESTION_DATA_URLS = [
-  "./src/data/questions.offline.json",
-  "./src/data/questions.json"
-];
+const QUESTION_DATA_URL = "./src/data/questions.offline.json";
 const EXPECTED_QUESTION_COUNT = 2194;
 
+// 加载题库JSON文件并过滤出支持的题目类型
 export async function loadQuestions() {
   const response = await fetchQuestionData();
 
@@ -24,20 +22,14 @@ export async function loadQuestions() {
   return questions;
 }
 
+// fetch题库，不用缓存确保拿到最新数据
 async function fetchQuestionData() {
-  let lastStatus = "未知";
-  for (const url of QUESTION_DATA_URLS) {
-    try {
-      const response = await fetch(url, { cache: "no-store" });
-      if (response.ok) return response;
-      lastStatus = response.status;
-    } catch (error) {
-      lastStatus = error.message;
-    }
-  }
-  throw new Error(`题库请求失败（${lastStatus}）`);
+  const response = await fetch(QUESTION_DATA_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`题库请求失败（${response.status}）`);
+  return response;
 }
 
+// Fisher-Yates洗牌算法，保证均匀随机
 export function shuffleQuestions(questions) {
   const result = [...questions];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -47,6 +39,7 @@ export function shuffleQuestions(questions) {
   return result;
 }
 
+// 把HTML格式的解析文本转成纯文本（去掉<br>、<p>等标签）
 export function explanationToText(value) {
   if (!value) return "暂无解析。";
 
@@ -61,6 +54,7 @@ export function explanationToText(value) {
     .trim();
 }
 
+// 只保留科目一的单选题和判断题，其他题型暂不支持
 function isSupportedQuestion(question) {
   if (!question || question.subject !== 1 || question.regionCode !== "0") return false;
   if (question.type !== 1 && question.type !== 3) return false;

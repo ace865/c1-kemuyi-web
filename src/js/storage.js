@@ -1,9 +1,11 @@
-const LEGACY_KEY = "c1-kemuyi-progress-v1";
-const REGISTRY_KEY = "c1-kemuyi-profiles-v2";
-const PROFILE_KEY_PREFIX = "c1-kemuyi-profile-v2:";
+// localStorage 存储模块，用key前缀隔离不同版本的数据
+const LEGACY_KEY = "c1-kemuyi-progress-v1";       // v1版本的旧数据key，用于兼容迁移
+const REGISTRY_KEY = "c1-kemuyi-profiles-v2";     // 档案注册表
+const PROFILE_KEY_PREFIX = "c1-kemuyi-profile-v2:"; // 单个档案数据的key前缀
 const DATA_VERSION = 2;
 const MAX_HISTORY = 20;
 
+// 创建空白档案数据结构
 export function createEmptyProfileData() {
   return {
     version: DATA_VERSION,
@@ -11,12 +13,14 @@ export function createEmptyProfileData() {
     totalAttempts: 0,
     correctAttempts: 0,
     wrongIds: [],
+    wrongSources: {}, // { [questionId]: "practice" | "exam" }
     sequentialIndex: 0,
     activeExam: null,
     examHistory: []
   };
 }
 
+// 初始化档案系统：如果存在v1旧数据就自动迁移到v2
 export function initializeProfiles() {
   const registry = readRegistry();
   if (registry.profiles.length || registry.legacyMigrated) return registry.profiles;
@@ -48,6 +52,7 @@ export function listProfiles() {
   return readRegistry().profiles;
 }
 
+// 新建档案：校验重名，写入注册表和空数据
 export function createProfile(name) {
   const normalizedName = normalizeProfileName(name);
   const registry = readRegistry();
@@ -63,6 +68,7 @@ export function createProfile(name) {
   return profile;
 }
 
+// 从localStorage读取档案数据，做了类型兜底防止脏数据
 export function loadProfileData(profileId) {
   const data = readJson(profileKey(profileId));
   if (!data || data.version !== DATA_VERSION) return createEmptyProfileData();
@@ -80,6 +86,7 @@ export function loadProfileData(profileId) {
   };
 }
 
+// 数据清洗：过滤掉题库中已不存在的题目ID，防止脏数据
 export function sanitizeProfileData(data, questions) {
   const validIds = new Set(questions.map((question) => question.id));
   const maxIndex = Math.max(questions.length - 1, 0);
@@ -98,6 +105,7 @@ export function sanitizeProfileData(data, questions) {
   };
 }
 
+// 保存档案数据，写入失败时返回false（localStorage可能满）
 export function saveProfileData(profileId, data) {
   try {
     writeJson(profileKey(profileId), { ...data, version: DATA_VERSION, examHistory: data.examHistory.slice(0, MAX_HISTORY) });
@@ -107,6 +115,7 @@ export function saveProfileData(profileId, data) {
   }
 }
 
+// 昵称校验：空值、超长都不行
 export function normalizeProfileName(name) {
   const normalized = String(name ?? "").trim();
   if (!normalized) throw new Error("请输入昵称");
