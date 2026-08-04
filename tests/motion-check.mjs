@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = await readFile(path.join(root, "src", "js", "app.js"), "utf8");
 const css = await readFile(path.join(root, "src", "css", "styles.css"), "utf8");
+const effects = await readFile(path.join(root, "src", "js", "effects.js"), "utf8");
 
 let mediaListener = null;
 const mediaQuery = {
@@ -62,8 +63,9 @@ assert.match(app, /transitionGeneration === viewTransitionGeneration/, "页面�
 assert.match(app, /generation === viewTransitionGeneration && activeViewName === "my"/, "旧滚动计时器不得影响快速导航后的页面");
 assert.match(app, /function showExamResult\(record\) \{\s*clearTransientEffects\(\)/, "重复查看考试结果前应清理旧彩纸");
 assert.doesNotMatch(app, /pulse\(feedbackButton\)|shake\(feedbackButton\)/, "答题按钮不应同时运行 CSS 与 JavaScript transform 动画");
-assert.doesNotMatch(app, /spawnCelebrationParticles\(/, "普通正确答题不应创建庆祝粒子");
-assert.match(app, /if \(!shouldAnimate\(\) \|\| document\.hidden\) \{\s*container\.replaceChildren\(\)/, "减少动画或页面隐藏时不应保留背景粒子节点");
+assert.doesNotMatch(app, /spawnCelebrationParticles\(feedbackButton\)/, "普通正确答题不应创建庆祝粒子");
+assert.match(effects, /if \(isMotionReduced\(\) \|\| document\.hidden\) \{\s*container\.replaceChildren\(\)/, "减少动画或页面隐藏时不应保留背景粒子节点");
+assert.match(effects, /index < 18/, "考试彩纸应限制为 18 片");
 assert.match(app, /const minimumSplashMs = shouldAnimate\(\) \? 500 : 0/, "启动页不得保留 1.1 秒强制等待");
 assert.match(await readFile(path.join(root, "src", "js", "motion.js"), "utf8"), /element\.closest\?\.\("\[hidden\]"\)/, "隐藏页面不得启动交错或 RAF 动画");
 

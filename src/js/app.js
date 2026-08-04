@@ -29,6 +29,7 @@ import {
   PRESETS,
   easeOutExpo
 } from "./motion.js";
+import { clearTransientEffects, spawnExamConfetti, syncAmbientParticles } from "./effects.js";
 
 const elements = Object.fromEntries(
   [...document.querySelectorAll("[id]")].map((element) => [toCamelCase(element.id), element])
@@ -101,7 +102,6 @@ let toastGeneration = 0;
 let viewTransitionTimer = null;
 let viewTransitionGeneration = 0;
 let navigationScrollTimer = null;
-const transientAnimations = new Set();
 let activeViewName = "loading";
 let lastBackPressAt = 0;
 let firstHomeRender = true;
@@ -968,7 +968,7 @@ function showExamResult(record) {
     if (shouldAnimate()) countTo(scoreElement, record.score, { duration: 600, easing: easeOutExpo });
     else scoreElement.textContent = String(record.score);
   }
-  if (record.passed && shouldAnimate()) spawnConfetti();
+  if (record.passed && shouldAnimate()) spawnExamConfetti();
 }
 
 function renderReviewNavigator() {
@@ -1397,45 +1397,42 @@ function toCamelCase(value) {
   return value.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
-function syncAmbientParticles() {
-  const container = document.querySelector(".ambient-particles");
-  if (!container) return;
-  if (!shouldAnimate() || document.hidden) {
-    container.replaceChildren();
-    return;
-  }
-  if (!container.childElementCount) {
-    const particle = document.createElement("div");
-    particle.className = "particle particle-1";
-    container.append(particle);
+function spawnCelebrationParticles(element) {
+  if (!shouldAnimate()) return;
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const colors = ["#146c43", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
+
+  for (let index = 0; index < 10; index += 1) {
+    const dot = document.createElement("div");
+    dot.className = "celebration-particle";
+    dot.style.left = `${centerX}px`;
+    dot.style.top = `${centerY}px`;
+    dot.style.background = colors[index % colors.length];
+    document.body.append(dot);
+    const angle = (Math.PI * 2 * index) / 10 + (Math.random() - 0.5) * 0.5;
+    const distance = 40 + Math.random() * 60;
+    dot.animate([
+      { transform: "translate(0, 0) scale(1)", opacity: 1 },
+      { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`, opacity: 0 }
+    ], { duration: 600 + Math.random() * 300, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" }).onfinish = () => dot.remove();
   }
 }
 
 function spawnConfetti() {
   if (!shouldAnimate()) return;
   const colors = ["#f0b429", "#146c43", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899", "#f97316"];
-  for (let index = 0; index < 18; index += 1) {
+  for (let index = 0; index < 30; index += 1) {
     const piece = document.createElement("div");
     piece.className = "confetti-piece";
     piece.style.left = `${Math.random() * 100}vw`;
     piece.style.background = colors[Math.floor(Math.random() * colors.length)];
     document.body.append(piece);
     const drift = (Math.random() - 0.5) * 200;
-    const animation = piece.animate([
+    piece.animate([
       { transform: "translateY(0) translateX(0) rotate(0deg)", opacity: 1 },
       { transform: `translateY(100vh) translateX(${drift}px) rotate(${360 + Math.random() * 720}deg)`, opacity: 0 }
-    ], { duration: 1500 + Math.random() * 1000, delay: Math.random() * 300, easing: "cubic-bezier(.25,.46,.45,.94)", fill: "forwards" });
-    transientAnimations.add(animation);
-    const cleanup = () => {
-      transientAnimations.delete(animation);
-      piece.remove();
-    };
-    animation.addEventListener("finish", cleanup, { once: true });
-    animation.addEventListener("cancel", cleanup, { once: true });
+    ], { duration: 2000 + Math.random() * 2000, delay: Math.random() * 800, easing: "cubic-bezier(.25,.46,.45,.94)", fill: "forwards" }).onfinish = () => piece.remove();
   }
-}
-
-function clearTransientEffects() {
-  for (const animation of [...transientAnimations]) animation.cancel();
-  document.querySelectorAll(".celebration-particle, .confetti-piece").forEach((element) => element.remove());
 }

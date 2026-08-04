@@ -1,6 +1,7 @@
 /* motion.js — 基于弹簧物理的UI动画引擎，不依赖任何第三方库 */
 
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const reducedMotion = reducedMotionQuery.matches;
 let applicationReducedMotion = false;
 let systemReducedMotion = reducedMotionQuery.matches;
 const preferenceListeners = new Set();
@@ -87,8 +88,8 @@ function easeInOutCubic(t) {
 // 弹簧动画核心：对指定CSS属性执行弹簧物理动画
 // 支持的属性：opacity / y / x / scale / rotate
 export function spring(element, targetProps, config = PRESETS.enter) {
-  if (isMotionReduced()) {
-    for (const [prop, value] of Object.entries(targetProps)) setComputedProp(element, prop, value);
+  if (reducedMotion) {
+    Object.assign(element.style, targetProps);
     return Promise.resolve();
   }
 
@@ -108,11 +109,6 @@ export function spring(element, targetProps, config = PRESETS.enter) {
 
       let raf;
       function tick() {
-        if (isMotionReduced() || document.hidden || !element.isConnected || element.closest?.("[hidden]")) {
-          for (const [prop, value] of Object.entries(targetProps)) setComputedProp(element, prop, value);
-          resolve();
-          return;
-        }
         let allSettled = true;
 
         for (const prop of Object.keys(targetProps)) {
@@ -251,8 +247,8 @@ export function staggerIn(elements, fromProps = {}, opts = {}) {
 
 // 基于缓动函数的补间动画（非弹簧），适用于需要精确时长控制的场景
 export function animate(element, targetProps, opts = {}) {
-  if (isMotionReduced()) {
-    for (const [prop, value] of Object.entries(targetProps)) setComputedProp(element, prop, value);
+  if (reducedMotion) {
+    Object.assign(element.style, targetProps);
     return Promise.resolve();
   }
 
@@ -267,12 +263,6 @@ export function animate(element, targetProps, opts = {}) {
     const startTime = performance.now();
 
     function tick(now) {
-      if (isMotionReduced() || document.hidden || !element.isConnected || element.closest?.("[hidden]")) {
-        for (const [prop, value] of Object.entries(targetProps)) setComputedProp(element, prop, value);
-        onComplete?.();
-        resolve();
-        return;
-      }
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const t = easing(progress);
@@ -342,7 +332,7 @@ function formatCountValue(value, opts) {
 
 /* ── 页面转场 ── */
 export function transitionView(fromView, toView) {
-  if (isMotionReduced()) {
+  if (reducedMotion) {
     if (fromView) fromView.hidden = true;
     toView.hidden = false;
     toView.style.opacity = "1";
@@ -369,23 +359,39 @@ export function transitionView(fromView, toView) {
 
 // 答错时的水平抖动反馈
 export function shake(element) {
-  return runKeyframes(element, [
-    { transform: "translateX(0)" },
-    { transform: "translateX(-4px)" },
-    { transform: "translateX(4px)" },
-    { transform: "translateX(-2px)" },
-    { transform: "translateX(2px)" },
-    { transform: "translateX(0)" }
-  ], { duration: 320, easing: "ease-out" });
+  if (reducedMotion) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const keyframes = [
+      { transform: "translateX(0)" },
+      { transform: "translateX(-8px)" },
+      { transform: "translateX(8px)" },
+      { transform: "translateX(-6px)" },
+      { transform: "translateX(6px)" },
+      { transform: "translateX(-3px)" },
+      { transform: "translateX(3px)" },
+      { transform: "translateX(0)" }
+    ];
+    const anim = element.animate(keyframes, { duration: 500, easing: "ease-out" });
+    anim.onfinish = resolve;
+  });
 }
 
 // 答对时的脉冲弹跳反馈
 export function pulse(element) {
-  return runKeyframes(element, [
-    { transform: "scale(1)" },
-    { transform: "scale(1.02)" },
-    { transform: "scale(1)" }
-  ], { duration: 260, easing: "cubic-bezier(.22,1,.36,1)" });
+  if (reducedMotion) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const keyframes = [
+      { transform: "scale(1)" },
+      { transform: "scale(1.04)" },
+      { transform: "scale(0.98)" },
+      { transform: "scale(1.01)" },
+      { transform: "scale(1)" }
+    ];
+    const anim = element.animate(keyframes, { duration: 400, easing: "ease-out" });
+    anim.onfinish = resolve;
+  });
 }
 
 // Toast弹入动画
