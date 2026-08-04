@@ -20,10 +20,12 @@ import {
 import {
   staggerIn,
   countTo,
-  shake,
-  pulse,
   toastIn,
   toastOut,
+  cancelMotion,
+  isMotionReduced,
+  onMotionPreferenceChange,
+  setMotionPreference,
   PRESETS,
   easeOutExpo
 } from "./motion.js";
@@ -95,6 +97,11 @@ let examTimerId = null;
 let reviewRecord = null;
 let reviewIndex = 0;
 let toastTimer = null;
+let toastGeneration = 0;
+let viewTransitionTimer = null;
+let viewTransitionGeneration = 0;
+let navigationScrollTimer = null;
+const transientAnimations = new Set();
 let activeViewName = "loading";
 let lastBackPressAt = 0;
 let firstHomeRender = true;
@@ -117,51 +124,44 @@ const VIEW_LEVEL = {
 
 bindEvents();
 setupNativeBackButton();
+onMotionPreferenceChange(handleMotionPreferenceChange);
 initialize();
 
 async function initialize() {
   clearExamTimer();
   showView("loading");
 
+  currentSubject = restoreLastSubject();
+  const defaultProfile = ensureDefaultProfile();
+  const startupProfile = loadProfileData(defaultProfile.id, currentSubject);
+  setMotionPreference(Boolean(startupProfile.preferences?.reduceMotion));
+
   const splashTitle = elements.splashTitle;
   const progressBar = elements.splashProgressBar;
   const splashStartedAt = performance.now();
-  const minimumSplashMs = 1100;
-  let progressTimer = null;
+  const minimumSplashMs = shouldAnimate() ? 500 : 0;
 
   if (splashTitle) {
-    splashTitle.textContent = "";
-    [..."正在加载题库"].forEach((character, index) => {
-      const span = document.createElement("span");
-      span.className = "char";
-      span.textContent = character;
-      span.style.animationDelay = `${index * 60 + 180}ms`;
-      splashTitle.append(span);
-    });
+    splashTitle.textContent = "正在加载题库";
   }
   if (progressBar) {
-    progressBar.style.width = "0%";
-    progressTimer = window.setInterval(() => {
-      const progress = Math.min(((performance.now() - splashStartedAt) / minimumSplashMs) * 92, 92);
-      progressBar.style.width = `${progress}%`;
-    }, 50);
+    progressBar.style.width = shouldAnimate() ? "15%" : "100%";
   }
 
   try {
-    currentSubject = restoreLastSubject();
     questions = await loadQuestionsForSubject(currentSubject);
     questionMap = new Map(questions.map((q) => [q.id, q]));
     updateSubjectUI();
     const remaining = minimumSplashMs - (performance.now() - splashStartedAt);
     if (remaining > 0) await new Promise((resolve) => window.setTimeout(resolve, remaining));
-    if (progressTimer) window.clearInterval(progressTimer);
     if (progressBar) progressBar.style.width = "100%";
-    elements.loadingView.classList.add("splash-exit");
-    await new Promise((resolve) => window.setTimeout(resolve, 420));
-    elements.loadingView.classList.remove("splash-exit");
-    activateProfile(ensureDefaultProfile());
+    if (shouldAnimate()) {
+      elements.loadingView.classList.add("splash-exit");
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
+      elements.loadingView.classList.remove("splash-exit");
+    }
+    activateProfile(defaultProfile);
   } catch (error) {
-    if (progressTimer) window.clearInterval(progressTimer);
     elements.errorMessage.textContent = `${error.message}。请确认题库文件存在，或运行 npm.cmd run dev 后再访问页面。`;
     showView("error");
   }
@@ -237,6 +237,7 @@ async function switchSubject(newSubject) {
     // Reload profile data for new subject
     if (activeProfile) {
       profileData = sanitizeProfileData(loadProfileData(activeProfile.id, currentSubject), questions);
+      applyMotionPreference();
       persistProfile(false);
       if (profileData.activeExam && getRemainingMs(profileData.activeExam) === 0) {
         submitExam(true);
@@ -250,8 +251,8 @@ async function switchSubject(newSubject) {
     multiSelected = new Set();
     answerLocked = false;
     dashboardAnimated = false;
-    renderDashboard();
     showView("home");
+    renderDashboard();
     updateNavigation("home");
     window.scrollTo({ top: 0 });
     showToast(`已切换到${SUBJECT_CONFIG[currentSubject].name}`);
@@ -292,6 +293,10 @@ function bindEvents() {
     applyMotionPreference();
     persistProfile(false);
     showToast(elements.reduceMotionToggle.checked ? "已减少动画" : "已开启动画");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) clearTransientEffects();
+    syncAmbientParticles();
   });
   document.addEventListener("keydown", handleStudyShortcut);
 
@@ -358,8 +363,8 @@ function activateProfile(profile) {
     return;
   }
 
-  renderDashboard();
   showView("home");
+  renderDashboard();
   updateNavigation("home");
 }
 
@@ -405,8 +410,8 @@ function switchProfile() {
   reviewRecord = null;
   multiSelected = new Set();
   dashboardAnimated = false;
-  renderProfileChooser();
   showView("profile");
+  renderProfileChooser();
   window.scrollTo({ top: 0 });
 }
 
@@ -418,17 +423,25 @@ function navigateTo(viewName, options = {}) {
   multiSelected = new Set();
   answerLocked = false;
 
+  window.clearTimeout(navigationScrollTimer);
+  showView(toViewKey(viewName));
   if (viewName === "home") renderDashboard();
   if (viewName === "practice-hub") renderPracticeHub();
   if (viewName === "special-hub") renderSpecialHub();
   if (viewName === "wrong-book") renderWrongBook();
   if (viewName === "exam-hub") renderExamHub();
   if (viewName === "my") renderMyPage();
-  showView(toViewKey(viewName));
   updateNavigation(viewName);
   window.scrollTo({ top: 0, behavior: shouldAnimate() ? "smooth" : "auto" });
-  if (options.help) setTimeout(() => document.querySelector(".help-list")?.scrollIntoView({ behavior: shouldAnimate() ? "smooth" : "auto" }), 80);
-  if (options.memory) setTimeout(() => document.querySelector(".memory-help")?.scrollIntoView({ behavior: shouldAnimate() ? "smooth" : "auto" }), 80);
+  const scrollTarget = options.help ? ".help-list" : options.memory ? ".memory-help" : null;
+  if (scrollTarget) {
+    const generation = viewTransitionGeneration;
+    navigationScrollTimer = window.setTimeout(() => {
+      if (generation === viewTransitionGeneration && activeViewName === "my") {
+        document.querySelector(scrollTarget)?.scrollIntoView({ behavior: shouldAnimate() ? "smooth" : "auto" });
+      }
+    }, 80);
+  }
 }
 
 function startPractice(mode) {
@@ -530,7 +543,6 @@ function answerQuestion(selectedAnswer) {
   persistProfile();
 
   // Highlight all option buttons
-  let feedbackButton = null;
   elements.optionsList.querySelectorAll(".option-button").forEach((button) => {
     button.disabled = true;
     const ans = button.dataset.answer;
@@ -539,25 +551,14 @@ function answerQuestion(selectedAnswer) {
       const selectedAnswers = selectedAnswer.split(",");
       if (correctAnswers.includes(ans)) button.classList.add("is-correct");
       if (selectedAnswers.includes(ans) && !correctAnswers.includes(ans)) button.classList.add("is-wrong");
-      if (selectedAnswers.includes(ans)) feedbackButton ??= button;
     } else {
       if (ans === currentQuestion.answer) button.classList.add("is-correct");
       if (ans === selectedAnswer && !isCorrect) button.classList.add("is-wrong");
-      if (ans === selectedAnswer) feedbackButton = button;
     }
   });
   // Hide multi-submit button
   const submitBtn = elements.optionsList.querySelector(".multi-submit-button");
   if (submitBtn) submitBtn.hidden = true;
-
-  if (shouldAnimate() && feedbackButton) {
-    if (isCorrect) {
-      pulse(feedbackButton);
-      spawnCelebrationParticles(feedbackButton);
-    } else {
-      shake(feedbackButton);
-    }
-  }
 
   renderAnswerPanel(currentQuestion, isCorrect, wasWrong);
 }
@@ -682,7 +683,7 @@ function renderDashboard() {
         const span = document.createElement("span");
         span.className = "char";
         span.textContent = character;
-        span.style.animationDelay = `${index * 45 + 100}ms`;
+        span.style.animationDelay = `${index * 20 + 40}ms`;
         heroTitle.append(span);
       });
     }
@@ -692,12 +693,12 @@ function renderDashboard() {
     elements.accuracyValue.textContent = "0%";
     elements.wrongCount.textContent = "0";
     requestAnimationFrame(() => {
-      countTo(elements.totalCount, questions.length, { duration: 1300, easing: easeOutExpo });
-      countTo(elements.answeredCount, profileData.answeredIds.length, { duration: 1200, easing: easeOutExpo });
-      countTo(elements.accuracyValue, accuracy, { duration: 1400, easing: easeOutExpo, suffix: "%" });
-      countTo(elements.wrongCount, profileData.wrongIds.length, { duration: 1100, easing: easeOutExpo });
-      staggerIn([...document.querySelectorAll("#home-view .stat-card")], { y: 20, opacity: 0 }, { stagger: 75, config: PRESETS.gentle });
-      staggerIn([...document.querySelectorAll("#home-view .feature-card")], { y: 16, opacity: 0 }, { stagger: 90, config: PRESETS.gentle, delay: 240 });
+      countTo(elements.totalCount, questions.length, { duration: 600, easing: easeOutExpo });
+      countTo(elements.answeredCount, profileData.answeredIds.length, { duration: 600, easing: easeOutExpo });
+      countTo(elements.accuracyValue, accuracy, { duration: 600, easing: easeOutExpo, suffix: "%" });
+      countTo(elements.wrongCount, profileData.wrongIds.length, { duration: 600, easing: easeOutExpo });
+      staggerIn([...document.querySelectorAll("#home-view .stat-card")], { y: 12, opacity: 0 }, { stagger: 35, config: PRESETS.gentle });
+      staggerIn([...document.querySelectorAll("#home-view .feature-card")], { y: 12, opacity: 0 }, { stagger: 45, config: PRESETS.gentle, delay: 80 });
     });
     dashboardAnimated = true;
   } else {
@@ -951,6 +952,7 @@ function renderExamHistory() {
 }
 
 function showExamResult(record) {
+  clearTransientEffects();
   reviewRecord = record;
   const examCfg = EXAM_CONFIG[record.subject] || EXAM_CONFIG[1];
   const wrongCount = record.wrongIds.length - record.unanswered;
@@ -963,7 +965,7 @@ function showExamResult(record) {
   window.scrollTo({ top: 0 });
   const scoreElement = document.getElementById("result-score-value");
   if (scoreElement) {
-    if (shouldAnimate()) countTo(scoreElement, record.score, { duration: 1200, easing: easeOutExpo });
+    if (shouldAnimate()) countTo(scoreElement, record.score, { duration: 600, easing: easeOutExpo });
     else scoreElement.textContent = String(record.score);
   }
   if (record.passed && shouldAnimate()) spawnConfetti();
@@ -1042,8 +1044,9 @@ function renderHelpContent() {
 
 function bindHelpSectionMotion(details, summary, content) {
   summary.addEventListener("click", (event) => {
-    if (!shouldAnimate() || details.dataset.animating === "true") return;
+    if (!shouldAnimate()) return;
     event.preventDefault();
+    if (details.dataset.animating === "true") return;
     animateHelpSection(details, content, !details.open);
   });
 }
@@ -1055,8 +1058,6 @@ function animateHelpSection(details, content, opening) {
   if (opening) details.open = true;
   const summaryHeight = details.querySelector("summary").getBoundingClientRect().height;
   const endHeight = opening ? details.scrollHeight : summaryHeight;
-  const overshootHeight = endHeight + Math.min(10, Math.max(4, (endHeight - startHeight) * 0.04));
-
   details.classList.toggle("is-opening", opening);
   details.classList.toggle("is-closing", !opening);
 
@@ -1064,22 +1065,20 @@ function animateHelpSection(details, content, opening) {
     opening
       ? [
           { height: `${startHeight}px`, offset: 0 },
-          { height: `${overshootHeight}px`, offset: 0.78 },
           { height: `${endHeight}px`, offset: 1 }
         ]
       : [
           { height: `${startHeight}px`, offset: 0 },
-          { height: `${Math.max(summaryHeight - 3, 0)}px`, offset: 0.82 },
           { height: `${summaryHeight}px`, offset: 1 }
         ],
     {
-      duration: opening ? 560 : 380,
-      easing: opening ? "cubic-bezier(.34,1.56,.64,1)" : "cubic-bezier(.4,0,.2,1)",
+      duration: opening ? 240 : 180,
+      easing: "cubic-bezier(.16,1,.3,1)",
       fill: "both"
     }
   );
 
-  content.animate(
+  const contentAnimation = content.animate(
     opening
       ? [
           { opacity: 0, transform: "translateY(-12px) scale(.985)" },
@@ -1090,20 +1089,27 @@ function animateHelpSection(details, content, opening) {
           { opacity: 0, transform: "translateY(-8px) scale(.99)" }
         ],
     {
-      duration: opening ? 460 : 240,
-      delay: opening ? 55 : 0,
-      easing: opening ? "cubic-bezier(.22,1,.36,1)" : "cubic-bezier(.4,0,1,1)",
+      duration: opening ? 180 : 140,
+      delay: 0,
+      easing: "ease-out",
       fill: "both"
     }
   );
 
-  containerAnimation.addEventListener("finish", () => {
+  details._helpAnimation = containerAnimation;
+  let cleaned = false;
+  const cleanup = (event) => {
+    if (cleaned) return;
+    cleaned = true;
     if (!opening) details.open = false;
     details.classList.remove("is-opening", "is-closing");
     delete details.dataset.animating;
-    containerAnimation.cancel();
-    content.getAnimations().forEach((animation) => animation.cancel());
-  }, { once: true });
+    if (details._helpAnimation === containerAnimation) delete details._helpAnimation;
+    contentAnimation.cancel();
+    if (event.type === "finish") containerAnimation.cancel();
+  };
+  containerAnimation.addEventListener("finish", cleanup, { once: true });
+  containerAnimation.addEventListener("cancel", cleanup, { once: true });
 }
 
 function handleDeleteAction(action) {
@@ -1169,17 +1175,27 @@ function showView(name) {
   if (previousViewName === name) return;
   const previousLevel = VIEW_LEVEL[previousViewName] ?? -1;
   const nextLevel = VIEW_LEVEL[name] ?? -1;
+  const transitionGeneration = ++viewTransitionGeneration;
+  window.clearTimeout(viewTransitionTimer);
+  Object.values(views).forEach((view) => {
+    view.classList.remove("view-enter", "view-slide-left-enter", "view-slide-right-enter");
+    if (view !== views[name]) view.getAnimations?.({ subtree: true }).forEach((animation) => animation.cancel());
+  });
   Object.entries(views).forEach(([viewName, element]) => { element.hidden = viewName !== name; });
   const navViews = ["home", "practiceHub", "specialHub", "examHub", "wrongBook", "my"];
   elements.bottomNav.hidden = !activeProfile || !navViews.includes(name);
   if (shouldAnimate() && !(name === "home" && firstHomeRender)) {
     const active = views[name];
     const enterClass = nextLevel > previousLevel ? "view-slide-left-enter" : "view-slide-right-enter";
-    active?.classList.remove("view-enter", "view-slide-left-enter", "view-slide-right-enter");
     void active?.offsetWidth;
     active?.classList.add(previousViewName ? enterClass : "view-enter");
-    window.setTimeout(() => active?.classList.remove(enterClass, "view-enter"), 650);
+    viewTransitionTimer = window.setTimeout(() => {
+      if (transitionGeneration === viewTransitionGeneration && activeViewName === name) {
+        active?.classList.remove(enterClass, "view-enter");
+      }
+    }, 320);
   }
+  if (name !== "examResult") clearTransientEffects();
   if (name === "home") firstHomeRender = false;
   activeViewName = name;
 }
@@ -1286,11 +1302,22 @@ function ensureWrongStat(questionId) {
 }
 
 function applyMotionPreference() {
-  document.documentElement.classList.toggle("reduce-motion", Boolean(profileData?.preferences?.reduceMotion));
+  const reduceMotion = Boolean(profileData?.preferences?.reduceMotion);
+  document.documentElement.classList.toggle("reduce-motion", reduceMotion);
+  setMotionPreference(reduceMotion);
+  syncAmbientParticles();
 }
 
 function shouldAnimate() {
-  return !profileData?.preferences?.reduceMotion;
+  return !isMotionReduced();
+}
+
+function handleMotionPreferenceChange(reduced) {
+  if (reduced) {
+    clearTransientEffects();
+    document.querySelectorAll(".help-section").forEach((details) => details._helpAnimation?.cancel());
+  }
+  syncAmbientParticles();
 }
 
 function hasKeyword(question, keywords) {
@@ -1340,15 +1367,26 @@ function createElement(tag, className = "", text = "") {
 
 function showToast(message) {
   window.clearTimeout(toastTimer);
+  cancelMotion(elements.toast);
+  const generation = ++toastGeneration;
   elements.toast.textContent = message;
   elements.toast.hidden = false;
   elements.toast.classList.remove("is-visible");
-  if (shouldAnimate()) toastIn(elements.toast).then(() => elements.toast.classList.add("is-visible"));
-  else elements.toast.classList.add("is-visible");
+  const reveal = shouldAnimate() ? toastIn(elements.toast) : Promise.resolve();
+  reveal.then(() => {
+    if (generation === toastGeneration) {
+      elements.toast.style.opacity = "1";
+      elements.toast.style.transform = "translate(50%, 0)";
+      elements.toast.classList.add("is-visible");
+    }
+  });
   toastTimer = window.setTimeout(() => {
     const finish = () => {
+      if (generation !== toastGeneration) return;
       elements.toast.classList.remove("is-visible");
       elements.toast.hidden = true;
+      elements.toast.style.opacity = "0";
+      elements.toast.style.transform = "translate(50%, 8px)";
     };
     if (shouldAnimate()) toastOut(elements.toast).then(finish);
     else finish();
@@ -1359,42 +1397,45 @@ function toCamelCase(value) {
   return value.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
-function spawnCelebrationParticles(element) {
-  if (!shouldAnimate()) return;
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  const colors = ["#146c43", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
-
-  for (let index = 0; index < 10; index += 1) {
-    const dot = document.createElement("div");
-    dot.className = "celebration-particle";
-    dot.style.left = `${centerX}px`;
-    dot.style.top = `${centerY}px`;
-    dot.style.background = colors[index % colors.length];
-    document.body.append(dot);
-    const angle = (Math.PI * 2 * index) / 10 + (Math.random() - 0.5) * 0.5;
-    const distance = 40 + Math.random() * 60;
-    dot.animate([
-      { transform: "translate(0, 0) scale(1)", opacity: 1 },
-      { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`, opacity: 0 }
-    ], { duration: 600 + Math.random() * 300, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "forwards" }).onfinish = () => dot.remove();
+function syncAmbientParticles() {
+  const container = document.querySelector(".ambient-particles");
+  if (!container) return;
+  if (!shouldAnimate() || document.hidden) {
+    container.replaceChildren();
+    return;
+  }
+  if (!container.childElementCount) {
+    const particle = document.createElement("div");
+    particle.className = "particle particle-1";
+    container.append(particle);
   }
 }
 
 function spawnConfetti() {
   if (!shouldAnimate()) return;
   const colors = ["#f0b429", "#146c43", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899", "#f97316"];
-  for (let index = 0; index < 30; index += 1) {
+  for (let index = 0; index < 18; index += 1) {
     const piece = document.createElement("div");
     piece.className = "confetti-piece";
     piece.style.left = `${Math.random() * 100}vw`;
     piece.style.background = colors[Math.floor(Math.random() * colors.length)];
     document.body.append(piece);
     const drift = (Math.random() - 0.5) * 200;
-    piece.animate([
+    const animation = piece.animate([
       { transform: "translateY(0) translateX(0) rotate(0deg)", opacity: 1 },
       { transform: `translateY(100vh) translateX(${drift}px) rotate(${360 + Math.random() * 720}deg)`, opacity: 0 }
-    ], { duration: 2000 + Math.random() * 2000, delay: Math.random() * 800, easing: "cubic-bezier(.25,.46,.45,.94)", fill: "forwards" }).onfinish = () => piece.remove();
+    ], { duration: 1500 + Math.random() * 1000, delay: Math.random() * 300, easing: "cubic-bezier(.25,.46,.45,.94)", fill: "forwards" });
+    transientAnimations.add(animation);
+    const cleanup = () => {
+      transientAnimations.delete(animation);
+      piece.remove();
+    };
+    animation.addEventListener("finish", cleanup, { once: true });
+    animation.addEventListener("cancel", cleanup, { once: true });
   }
+}
+
+function clearTransientEffects() {
+  for (const animation of [...transientAnimations]) animation.cancel();
+  document.querySelectorAll(".celebration-particle, .confetti-piece").forEach((element) => element.remove());
 }
