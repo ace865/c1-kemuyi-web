@@ -1,6 +1,44 @@
 /* motion.js — 基于弹簧物理的UI动画引擎，不依赖任何第三方库 */
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const reducedMotion = reducedMotionQuery.matches;
+let applicationReducedMotion = false;
+let systemReducedMotion = reducedMotionQuery.matches;
+const preferenceListeners = new Set();
+const activeAnimations = new Set();
+
+export function isMotionReduced() {
+  return applicationReducedMotion || systemReducedMotion;
+}
+
+export function setMotionPreference(reduceMotion) {
+  const previous = isMotionReduced();
+  applicationReducedMotion = Boolean(reduceMotion);
+  notifyPreferenceChange(previous);
+}
+
+export function onMotionPreferenceChange(listener) {
+  preferenceListeners.add(listener);
+  return () => preferenceListeners.delete(listener);
+}
+
+function notifyPreferenceChange(previous) {
+  const current = isMotionReduced();
+  if (previous === current) return;
+  if (current) {
+    for (const animation of [...activeAnimations]) animation.cancel();
+  }
+  for (const listener of preferenceListeners) listener(current);
+}
+
+function handleSystemPreferenceChange(event) {
+  const previous = isMotionReduced();
+  systemReducedMotion = event.matches;
+  notifyPreferenceChange(previous);
+}
+
+if (reducedMotionQuery.addEventListener) reducedMotionQuery.addEventListener("change", handleSystemPreferenceChange);
+else reducedMotionQuery.addListener?.(handleSystemPreferenceChange);
 
 // 弹簧求解器：用欧拉积分模拟弹簧阻尼运动
 // F = -k*x - c*v（胡克定律 + 阻尼力）
@@ -101,6 +139,38 @@ export function spring(element, targetProps, config = PRESETS.enter) {
   });
 }
 
+function runKeyframes(element, keyframes, options) {
+  if (isMotionReduced() || !element?.animate || element.closest?.("[hidden]")) return Promise.resolve();
+  cancelMotion(element);
+  return new Promise((resolve) => {
+    const animation = element.animate(keyframes, options);
+    activeAnimations.add(animation);
+    element._motionAnimation = animation;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      activeAnimations.delete(animation);
+      if (element._motionAnimation === animation) delete element._motionAnimation;
+      resolve();
+    };
+    if (animation.addEventListener) {
+      animation.addEventListener("finish", finish, { once: true });
+      animation.addEventListener("cancel", finish, { once: true });
+    } else {
+      animation.onfinish = finish;
+      animation.oncancel = finish;
+    }
+  });
+}
+
+export function cancelMotion(element) {
+  const animation = element?._motionAnimation;
+  if (!animation) return;
+  delete element._motionAnimation;
+  animation.cancel();
+}
+
 // 从元素的inline style或computed style中读取当前属性值
 // TODO: matrix解析可能在某些浏览器上有兼容性问题，后续考虑改用getBoundingClientRect
 function getComputedProp(element, prop) {
@@ -158,39 +228,21 @@ function setComputedProp(element, prop, value) {
 
 // 多元素交错入场动画，每个元素间隔stagger毫秒依次执行弹簧动画
 export function staggerIn(elements, fromProps = {}, opts = {}) {
-  if (reducedMotion) {
-    for (const el of elements) {
-      el.style.opacity = "1";
-      el.style.transform = "none";
-    }
-    return Promise.resolve();
-  }
-
-  const { stagger = 60, config = PRESETS.enter, delay = 0 } = opts;
-  const promises = [];
-
-  for (let i = 0; i < elements.length; i++) {
-    const el = elements[i];
-    // 设置初始状态
-    for (const [prop, value] of Object.entries(fromProps)) {
-      setComputedProp(el, prop, value);
-    }
-    el.style.opacity = String(fromProps.opacity ?? 0);
-
-    const p = new Promise((resolve) => {
-      setTimeout(() => {
-        const target = { opacity: 1 };
-        if ("y" in fromProps) target.y = 0;
-        if ("x" in fromProps) target.x = 0;
-        if ("scale" in fromProps) target.scale = 1;
-        if ("rotate" in fromProps) target.rotate = 0;
-        spring(el, target, config).then(resolve);
-      }, delay + i * stagger);
-    });
-    promises.push(p);
-  }
-
-  return Promise.all(promises);
+  if (isMotionReduced()) return Promise.resolve();
+  const { stagger = 45, delay = 0, duration = 240 } = opts;
+  const transforms = [];
+  if (fromProps.x) transforms.push(`translateX(${fromProps.x}px)`);
+  if (fromProps.y) transforms.push(`translateY(${fromProps.y}px)`);
+  if (fromProps.scale && fromProps.scale !== 1) transforms.push(`scale(${fromProps.scale})`);
+  if (fromProps.rotate) transforms.push(`rotate(${fromProps.rotate}deg)`);
+  return Promise.all(elements.map((element, index) => runKeyframes(element, [
+    { opacity: fromProps.opacity ?? 0, transform: transforms.join(" ") || "none" },
+    { opacity: 1, transform: "none" }
+  ], {
+    duration,
+    delay: delay + index * stagger,
+    easing: "cubic-bezier(.16,1,.3,1)"
+  })));
 }
 
 // 基于缓动函数的补间动画（非弹簧），适用于需要精确时长控制的场景
@@ -237,7 +289,7 @@ export function animate(element, targetProps, opts = {}) {
 
 // 数字计数器：从0递增到目标值，支持前缀/后缀/小数位
 export function countTo(element, targetValue, opts = {}) {
-  if (reducedMotion) {
+  if (isMotionReduced()) {
     element.textContent = formatCountValue(targetValue, opts);
     return Promise.resolve();
   }
@@ -249,6 +301,11 @@ export function countTo(element, targetValue, opts = {}) {
     const startTime = performance.now();
 
     function tick(now) {
+      if (isMotionReduced() || document.hidden || !element.isConnected || element.closest?.("[hidden]")) {
+        element.textContent = formatCountValue(targetValue, opts);
+        resolve();
+        return;
+      }
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const t = easing(progress);
@@ -339,24 +396,26 @@ export function pulse(element) {
 
 // Toast弹入动画
 export function toastIn(element) {
-  if (reducedMotion) {
+  if (isMotionReduced()) {
     element.style.opacity = "1";
     element.style.transform = "translate(50%, 0)";
     return Promise.resolve();
   }
-  element.style.opacity = "0";
-  element.style.transform = "translate(50%, 20px)";
-  return spring(element, { opacity: 1, y: 0 }, PRESETS.snappy).then(() => {
-    element.style.transform = "translate(50%, 0)";
-  });
+  return runKeyframes(element, [
+    { opacity: 0, transform: "translate(50%, 8px)" },
+    { opacity: 1, transform: "translate(50%, 0)" }
+  ], { duration: 200, easing: "cubic-bezier(.16,1,.3,1)" });
 }
 
 export function toastOut(element) {
-  if (reducedMotion) {
+  if (isMotionReduced()) {
     element.style.opacity = "0";
     return Promise.resolve();
   }
-  return animate(element, { opacity: 0, y: 10 }, { duration: 180 });
+  return runKeyframes(element, [
+    { opacity: 1, transform: "translate(50%, 0)" },
+    { opacity: 0, transform: "translate(50%, 6px)" }
+  ], { duration: 140, easing: "ease-in" });
 }
 
-export { PRESETS, easeOutExpo, easeOutCubic, easeInOutCubic, reducedMotion };
+export { PRESETS, easeOutExpo, easeOutCubic, easeInOutCubic };

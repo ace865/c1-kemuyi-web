@@ -20,7 +20,7 @@ assert.match(app, /"1": 0, "2": 1, "3": 2, "4": 3/, "数字键应依次映射到
 assert.match(app, /event\.key === "Backspace"/, "退格键应支持返回上一题");
 assert.match(html, /aria-keyshortcuts="Space Enter"/, "下一题按钮应声明键盘快捷键");
 assert.match(app, /function animateHelpSection\(/, "帮助说明卡片应使用自定义展开动画");
-assert.match(app, /cubic-bezier\(\.34,1\.56,\.64,1\)/, "展开动画应使用非线性弹性曲线");
+assert.match(app, /duration: opening \? 240 : 180/, "帮助展开动画应使用统一的短面板时长");
 
 console.log(`页面结构检查通过：${references.length} 个元素引用全部存在。`);
 

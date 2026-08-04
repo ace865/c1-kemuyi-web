@@ -3,6 +3,7 @@ await import("./questions-loading-check.mjs");
 await import("./storage-check.mjs");
 await import("./exam-check.mjs");
 await import("./static-check.mjs");
+await import("./motion-check.mjs");
 await import("./desktop-check.mjs");
 await import("./repository-policy-check.mjs");
 
