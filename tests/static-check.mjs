@@ -13,6 +13,12 @@ const missing = references.filter((reference) => !ids.has(reference));
 assert.deepEqual(missing, [], `app.js 引用了不存在的页面元素：${missing.join(", ")}`);
 assert.match(html, /data-view="exam-hub"/, "底部导航应包含模考入口");
 assert.match(html, /id="profile-view"/, "页面应包含本地档案选择视图");
+assert.match(app, /<span id="result-score-value">0<\/span><small>分<\/small>/, "考试分数的数字和单位应使用独立元素");
+assert.doesNotMatch(app, /scoreEl\.prepend\(/, "考试分数动画不应在原始占位数字前重复插入数字");
+assert.match(app, /document\.addEventListener\("keydown", handleStudyShortcut\)/, "页面应注册刷题快捷键");
+assert.match(app, /"1": 0, "2": 1, "3": 2, "4": 3/, "数字键应依次映射到前四个选项");
+assert.match(app, /event\.key === "Backspace"/, "退格键应支持返回上一题");
+assert.match(html, /aria-keyshortcuts="Space Enter"/, "下一题按钮应声明键盘快捷键");
 
 console.log(`页面结构检查通过：${references.length} 个元素引用全部存在。`);
 

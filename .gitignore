@@ -1,33 +1,8 @@
-# Dependencies
 node_modules/
-
-# Build output / release packages (use GitHub Releases for binaries)
-release/*.exe
-release/*.yml
-release/*.yaml
-release/builder-effective-config.yaml
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+release/
+build/icon.ico
+*.log
 .DS_Store
 Thumbs.db
-Desktop.ini
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Logs
-*.log
-npm-debug.log*
-
-# Electron builder cache
-dist/
-.cache/
+.idea/
+.vscode/
