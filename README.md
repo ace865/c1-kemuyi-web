@@ -1,95 +1,65 @@
 <div align="center">
 
-# C1 科目一通关助手
+[中文](./README.md) · [日本語](./README.ja.md) · [English](./README.en.md)
 
-**C1 Theory Test · Offline Practice System**  
-**C1 学科試験 · オフライン学習システム**
+![C1 Theory Offline Desktop System](./docs/assets/readme-cover.svg)
 
-`HTML` · `CSS` · `JavaScript` · `Electron` · `Windows x64`
+离线运行的 C1 科目一刷题与模拟考试桌面应用。
+
+![Windows x64](https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square&logo=windows11&logoColor=white)
+![Electron 43](https://img.shields.io/badge/Electron-43-47848F?style=flat-square&logo=electron&logoColor=white)
+![Questions 2194](https://img.shields.io/badge/questions-2%2C194-35D6A4?style=flat-square)
+![Offline](https://img.shields.io/badge/runtime-offline-17232D?style=flat-square)
 
 </div>
 
----
+## 系统规格
 
-| 中文 | English | 日本語 |
-|---|---|---|
-| C1 科目一离线刷题与模拟考试工具。 | Offline C1 theory practice and mock-exam tool. | C1 学科試験向けのオフライン学習・模擬試験ツール。 |
-| 无需账号；题库、图片和学习数据均保存在本机。 | No account required. Questions, images, and progress stay on-device. | アカウント不要。問題・画像・学習記録は端末内に保存されます。 |
+| 数据集 | 图片资源 | 模拟考试 | 合格线 |
+|---:|---:|---:|---:|
+| 2,194 题 | 787 张 | 100 题 / 45 分钟 | 90 分 |
 
-## Specification · 规格 · 仕様
+## 功能
 
-| Item | Value |
-|---|---:|
-| Question bank / 题库 / 問題数 | 2,194 |
-| Local images / 离线图片 / ローカル画像 | 787 |
-| Mock exam / 模拟考试 / 模擬試験 | 100 questions |
-| Time limit / 限时 / 制限時間 | 45 min |
-| Pass score / 合格线 / 合格点 | 90 / 100 |
-| Storage / 数据存储 / データ保存 | Local only |
+| 模块 | 实现 |
+|---|---|
+| `PRACTICE` | 顺序练习、无重复随机练习、错题练习、即时解析 |
+| `EXAM` | 计时、答题卡、断点恢复、到时自动交卷 |
+| `REVIEW` | 逐题复盘、错题来源、最近 20 场考试记录 |
+| `PROFILE` | 多本地档案；进度、成绩和错题相互隔离 |
+| `OFFLINE` | 题库与图片全部本地化；运行时无远程依赖 |
 
-## Modules · 模块 · モジュール
-
-| Module | 中文 | English | 日本語 |
-|---|---|---|---|
-| Practice | 顺序、随机、错题练习 | Sequential, random, wrong-answer practice | 順番・ランダム・誤答復習 |
-| Exam | 计时、答题卡、自动交卷 | Timer, navigator, automatic submission | タイマー・問題一覧・自動提出 |
-| Review | 成绩、逐题解析、考试历史 | Score, per-question review, exam history | 採点・問題別復習・試験履歴 |
-| Profiles | 多档案、本地隔离 | Multiple isolated local profiles | 複数ローカルプロファイル |
-| Offline | 本地题库与图片，无远程依赖 | Local dataset and images; no remote runtime dependency | 問題・画像を内蔵、外部通信に依存しない |
-
-## Run · 运行 · 実行
-
-Requirements / 环境要求 / 必要環境: **Node.js 22+**
+## 运行
 
 ```powershell
 npm install
 npm start
 ```
 
-Browser preview / 浏览器预览 / ブラウザ確認:
+浏览器预览：
 
 ```powershell
 node scripts/serve-local.mjs
 # http://127.0.0.1:8080
 ```
 
-## Verify · 验证 · 検証
+## 验证与构建
 
 ```powershell
-npm run check
+npm run check       # 离线完整性 + 自动化测试
+npm run dist:win    # 输出 Windows NSIS 安装包
 ```
 
-```text
-offline:check  dataset count · image mapping · remote URL detection
-tests          storage · exam · lifecycle · DOM contract · desktop security
-```
-
-## Build · 构建 · ビルド
-
-```powershell
-npm run dist:win
-```
-
-Output / 输出 / 出力: `release/C1-Kemuyi-Setup-*.exe`
-
-## Layout · 结构 · 構成
+## 结构
 
 ```text
 index.html
-├─ src/
-│  ├─ data/                    offline question bank
-│  ├─ assets/question-images/  local image set
-│  ├─ js/                      practice, exam, storage, motion
-│  └─ css/                     responsive UI
-├─ desktop/                    Electron main process
-├─ scripts/                    build and integrity checks
-└─ tests/                      Node.js test suite
+├─ src/data/                    离线题库
+├─ src/assets/question-images/  题目图片
+├─ src/js/                      练习、考试、存储、动效
+├─ desktop/                     Electron 主进程
+├─ scripts/                     构建与完整性检查
+└─ tests/                       Node.js 测试
 ```
 
----
-
-<sub>
-中文：非官方学习工具，请以当地最新考试规定为准。<br>
-English: Unofficial study software. Refer to current local exam regulations.<br>
-日本語：非公式の学習ソフトウェアです。最新の試験規定を確認してください。
-</sub>
+> 非官方学习工具。考试规则与题目更新以当地主管部门发布的信息为准。

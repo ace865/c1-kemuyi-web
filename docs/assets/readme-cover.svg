@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
+  <title id="title">C1 Theory Offline Desktop System</title>
+  <desc id="desc">Technical cover showing offline status and dataset metrics.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1118"/>
+      <stop offset="1" stop-color="#101b24"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#8ba2b2" stroke-opacity=".08"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="480" rx="20" fill="url(#bg)"/>
+  <rect width="1280" height="480" rx="20" fill="url(#grid)"/>
+  <path d="M0 7Q0 0 7 0h1266q7 0 7 7" fill="none" stroke="#35d6a4" stroke-width="3"/>
+
+  <g font-family="Consolas, 'SFMono-Regular', Menlo, monospace">
+    <text x="72" y="74" fill="#35d6a4" font-size="18" letter-spacing="3">SYSTEM / C1-KEMUYI</text>
+    <text x="1208" y="74" fill="#8da0ad" font-size="16" text-anchor="end">OFFLINE · WINDOWS</text>
+
+    <text x="70" y="192" fill="#f2f7f8" font-size="78" font-weight="700" letter-spacing="-3">C1 THEORY</text>
+    <text x="74" y="240" fill="#9fb0ba" font-size="24" letter-spacing="6">DESKTOP TRAINING SYSTEM</text>
+
+    <g transform="translate(72 316)">
+      <g>
+        <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
+        <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">QUESTION BANK</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">2,194</text>
+      </g>
+      <g transform="translate(278)">
+        <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
+        <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">LOCAL IMAGES</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">787</text>
+      </g>
+      <g transform="translate(556)">
+        <rect width="250" height="96" rx="8" fill="#101a22" stroke="#2a3a45"/>
+        <text x="20" y="31" fill="#78909f" font-size="14" letter-spacing="2">MOCK EXAM</text>
+        <text x="20" y="72" fill="#f2f7f8" font-size="32" font-weight="700">100 × 45m</text>
+      </g>
+      <g transform="translate(834)">
+        <rect width="250" height="96" rx="8" fill="#10231f" stroke="#35d6a4" stroke-opacity=".65"/>
+        <text x="20" y="31" fill="#7fc8b0" font-size="14" letter-spacing="2">RUNTIME</text>
+        <circle cx="27" cy="65" r="7" fill="#35d6a4"/>
+        <text x="46" y="72" fill="#e9fff7" font-size="25" font-weight="700">LOCAL</text>
+      </g>
+    </g>
+  </g>
+</svg>
