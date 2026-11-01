@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "electron": "43.0.0",
-    "electron-builder": "26.15.3"
+    "electron-builder": "26.18.0"
   },
   "build": {
     "appId": "com.local.c1kemuyi.assistant",
